@@ -1,0 +1,91 @@
+SMART STUDENT HUB - QUICK SETUP GUIDE
+=====================================
+
+WHAT YOU NEED
+=============
+- Windows 10/11, macOS 10.15+, or Linux
+- 8GB RAM minimum
+- 5GB free space
+
+REQUIRED SOFTWARE
+=================
+1. Node.js (https://nodejs.org/) - Choose LTS version
+2. Python 3.8+ (https://python.org/)
+3. PostgreSQL (https://postgresql.org/)
+
+INSTALLATION (5 STEPS)
+======================
+
+Step 1: Download Project
+------------------------
+Download ZIP file and extract, or:
+git clone <repository-url>
+cd smart-student-hub
+
+Step 2: Setup Backend
+---------------------
+cd backend
+python -m venv venv
+
+# Activate virtual environment:
+# Windows: venv\Scripts\activate
+# macOS/Linux: source venv/bin/activate
+
+pip install fastapi uvicorn sqlalchemy psycopg2-binary python-multipart python-jose[cryptography] passlib[bcrypt] python-dotenv pydantic
+
+Step 3: Setup Database
+----------------------
+# Start PostgreSQL service
+# Create database:
+createdb smart_student_hub
+
+# Or using psql:
+psql -U postgres
+CREATE DATABASE smart_student_hub;
+\q
+
+Step 4: Setup Frontend
+----------------------
+cd ../frontend
+npm install
+
+Step 5: Run Application
+-----------------------
+# Terminal 1 (Backend):
+cd backend
+python -m uvicorn main:app --reload
+
+# Terminal 2 (Frontend):
+cd frontend
+npm start
+
+ACCESS APPLICATION
+==================
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+QUICK FIXES
+===========
+- Node issues: npm cache clean --force
+- Python issues: pip install --upgrade pip
+- Database issues: Check PostgreSQL service is running
+
+FEATURES
+========
+✅ Graduate Cap Logo & Professional Design
+✅ User Login (Admin/Teacher/Student)
+✅ Student Activity Management
+✅ Certificate Upload & Download
+✅ Teacher Review & Approval
+✅ Real-time Notifications
+✅ Performance Scoring
+✅ Mobile & Desktop Responsive
+
+TECH STACK
+==========
+Backend: FastAPI + Python + PostgreSQL
+Frontend: React + TypeScript + Material-UI
+Database: PostgreSQL with proper relationships
+
+That's it! Your Smart Student Hub is ready to use! 🎓

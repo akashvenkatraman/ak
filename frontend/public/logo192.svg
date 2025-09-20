@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Background Circle -->
+  <circle cx="96" cy="96" r="90" fill="url(#gradient)" stroke="#1e3a8a" stroke-width="3"/>
+  
+  <!-- Graduation Cap -->
+  <g transform="translate(96, 96)">
+    <!-- Cap Base -->
+    <rect x="-32" y="-14" width="64" height="7" fill="#1e3a8a" rx="2"/>
+    
+    <!-- Cap Top -->
+    <path d="M-32,-14 L-28,-22 L28,-22 L32,-14 Z" fill="#3b82f6"/>
+    
+    <!-- Tassel -->
+    <line x1="22" y1="-18" x2="30" y2="-26" stroke="#ffd700" stroke-width="2"/>
+    <circle cx="30" cy="-26" r="2" fill="#ffd700"/>
+    
+    <!-- Cap Button -->
+    <circle cx="0" cy="-18" r="2.5" fill="#1e3a8a"/>
+  </g>
+  
+  <!-- Diploma Scroll -->
+  <g transform="translate(96, 110)">
+    <rect x="-22" y="-4" width="44" height="6" fill="#f8f9fa" stroke="#1e3a8a" stroke-width="1" rx="1"/>
+    <rect x="-18" y="-2" width="36" height="3" fill="#1e3a8a" opacity="0.3"/>
+  </g>
+  
+  <!-- Books -->
+  <g transform="translate(96, 125)">
+    <rect x="-18" y="-2" width="7" height="5" fill="#4caf50" rx="1"/>
+    <rect x="-9" y="-2" width="7" height="5" fill="#ff9800" rx="1"/>
+    <rect x="0" y="-2" width="7" height="5" fill="#e91e63" rx="1"/>
+    <rect x="9" y="-2" width="7" height="5" fill="#9c27b0" rx="1"/>
+  </g>
+  
+  <!-- Stars for Achievement -->
+  <g transform="translate(96, 96)">
+    <polygon points="0,-36 2,-32 6,-32 3,-29 4,-25 0,-27 -4,-25 -3,-29 -6,-32 -2,-32" fill="#ffd700"/>
+    <polygon points="-28,-18 2,-14 6,-14 3,-11 4,-7 0,-9 -4,-7 -3,-11 -6,-14 -2,-14" fill="#ffd700" opacity="0.7"/>
+    <polygon points="28,-18 2,-14 6,-14 3,-11 4,-7 0,-9 -4,-7 -3,-11 -6,-14 -2,-14" fill="#ffd700" opacity="0.7"/>
+  </g>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
