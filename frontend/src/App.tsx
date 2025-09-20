@@ -11,6 +11,7 @@ import RegisterPageDebug from './pages/RegisterPageDebug';
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
+import ProfilePage from './pages/ProfilePage';
 import { UserRole } from './types';
 import './App.css';
 
@@ -72,6 +73,16 @@ function App() {
                 <ProtectedRoute allowedRoles={[UserRole.TEACHER]}>
                   <Layout>
                     <TeacherDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT]}>
+                  <Layout>
+                    <ProfilePage />
                   </Layout>
                 </ProtectedRoute>
               }

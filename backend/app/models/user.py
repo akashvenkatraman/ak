@@ -37,6 +37,20 @@ class User(Base):
     employee_id = Column(String, nullable=True)  # For teachers
     performance_score = Column(Integer, default=0)  # For students - cumulative performance score
     total_credits_earned = Column(Integer, default=0)  # For students - total credits earned
+    
+    # Profile management fields
+    profile_picture = Column(String, nullable=True)  # URL to profile picture
+    bio = Column(Text, nullable=True)  # User bio/description
+    date_of_birth = Column(DateTime, nullable=True)  # Date of birth
+    address = Column(Text, nullable=True)  # Address
+    city = Column(String, nullable=True)  # City
+    state = Column(String, nullable=True)  # State
+    country = Column(String, nullable=True)  # Country
+    postal_code = Column(String, nullable=True)  # Postal code
+    linkedin_url = Column(String, nullable=True)  # LinkedIn profile
+    twitter_url = Column(String, nullable=True)  # Twitter profile
+    website_url = Column(String, nullable=True)  # Personal website
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

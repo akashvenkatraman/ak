@@ -217,6 +217,31 @@ export const activityLogsApi = {
     api.get('/activity-logs/admin/summary', { params: { days } }),
 };
 
+// Profile API
+export const profileApi = {
+  getProfile: (): Promise<AxiosResponse<any>> =>
+    api.get('/profile/profile'),
+
+  updateProfile: (profileData: any): Promise<AxiosResponse<any>> =>
+    api.put('/profile/profile', profileData),
+
+  changePassword: (passwordData: { current_password: string; new_password: string; confirm_password: string }): Promise<AxiosResponse<any>> =>
+    api.post('/profile/profile/password', passwordData),
+
+  uploadProfilePicture: (file: FormData): Promise<AxiosResponse<any>> =>
+    api.post('/profile/profile/picture', file, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+
+  deleteProfilePicture: (): Promise<AxiosResponse<any>> =>
+    api.delete('/profile/profile/picture'),
+
+  getProfilePicture: (userId: number): Promise<AxiosResponse<any>> =>
+    api.get(`/profile/profile/picture/${userId}`),
+};
+
 // File download utility
 export const downloadFile = (filePath: string) => {
   window.open(`${BASE_URL}/${filePath}`, '_blank');

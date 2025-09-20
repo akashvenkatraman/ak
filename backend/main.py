@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.database import create_tables, Base, engine
-from app.api import auth, admin, students, teachers, websocket, health, files, activity_logs, notifications
+from app.api import auth, admin, students, teachers, websocket, health, files, activity_logs, notifications, profile
 from config import settings
 import os
 
@@ -26,10 +26,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create uploads directory
+# Create uploads directories
 os.makedirs("uploads/certificates", exist_ok=True)
+os.makedirs("uploads/profile_pictures", exist_ok=True)
 
-# Mount static files for uploaded certificates
+# Mount static files for uploaded files
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include routers
@@ -42,6 +43,7 @@ app.include_router(websocket.router)
 app.include_router(files.router)
 app.include_router(activity_logs.router)
 app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+app.include_router(profile.router, tags=["profile"])
 
 @app.on_event("startup")
 async def startup_event():

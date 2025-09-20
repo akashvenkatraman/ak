@@ -27,6 +27,7 @@ import {
   School,
   CheckCircle,
   PendingActions,
+  Person,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { notificationApi } from '../services/api';
@@ -279,6 +280,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         open={Boolean(profileMenuAnchor)}
         onClose={() => setProfileMenuAnchor(null)}
       >
+        <MenuItem onClick={() => {
+          navigate('/profile');
+          setProfileMenuAnchor(null);
+        }}>
+          <ListItemIcon>
+            <Person fontSize="small" />
+          </ListItemIcon>
+          Profile
+        </MenuItem>
+        <Divider />
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <ExitToApp fontSize="small" />
