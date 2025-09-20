@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Paper,
@@ -15,7 +15,7 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
-  Tooltip,
+  Divider,
 } from '@mui/material';
 import {
   Visibility,
@@ -27,12 +27,13 @@ import {
   School,
   Badge,
   CheckCircle,
-  Error,
+  Google as GoogleIcon,
 } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { UserCreate, UserRole } from '../types';
 import Logo from '../components/Logo';
+import api from '../services/api';
 
 const RegisterPage: React.FC = () => {
   const [userData, setUserData] = useState<UserCreate>({
@@ -50,6 +51,7 @@ const RegisterPage: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
@@ -105,7 +107,7 @@ const RegisterPage: React.FC = () => {
         if (value !== userData.password) return 'Passwords do not match';
         return '';
       case 'phone_number':
-        if (value && !/^[\+]?[1-9][\d]{0,15}$/.test(value.replace(/[\s\-\(\)]/g, ''))) {
+        if (value && !/^[+]?[1-9][\d]{0,15}$/.test(value.replace(/[\s\-()]/g, ''))) {
           return 'Please enter a valid phone number';
         }
         return '';
@@ -216,12 +218,35 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserData({
-      ...userData,
-      [e.target.name]: e.target.value,
-    });
+  const handleGoogleSignup = async () => {
+    setGoogleLoading(true);
+    setError('');
+    
+    try {
+      // Get Google OAuth URL from backend
+      const response = await api.get('/api/auth/google/url');
+      const { url } = response.data;
+      
+      // Redirect to Google OAuth
+      window.location.href = url;
+    } catch (err: any) {
+      console.error('Google OAuth error:', err);
+      if (err.response?.data?.detail?.includes('not configured')) {
+        setError('Google OAuth is not configured. Please contact administrator or use regular registration.');
+      } else {
+        setError('Failed to initiate Google signup. Please try again.');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
   };
+
+  // const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setUserData({
+  //     ...userData,
+  //     [e.target.name]: e.target.value,
+  //   });
+  // };
 
   const handleRoleChange = (e: any) => {
     setUserData({
@@ -563,6 +588,40 @@ const RegisterPage: React.FC = () => {
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CheckCircle />}
               >
                 {loading ? 'Creating Account...' : 'Create Account'}
+              </Button>
+
+              <Divider sx={{ my: 3 }}>
+                <Typography variant="body2" color="textSecondary">
+                  OR
+                </Typography>
+              </Divider>
+
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<GoogleIcon />}
+                onClick={handleGoogleSignup}
+                disabled={googleLoading}
+                size="large"
+                sx={{ 
+                  mb: 3,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  borderColor: '#1976d2',
+                  color: '#1976d2',
+                  '&:hover': {
+                    borderColor: '#1565c0',
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                  },
+                  '&:disabled': {
+                    borderColor: '#e0e0e0',
+                    color: '#9e9e9e',
+                  }
+                }}
+              >
+                {googleLoading ? <CircularProgress size={20} /> : 'Continue with Google'}
               </Button>
               
               <Box textAlign="center" sx={{ mt: 2 }}>

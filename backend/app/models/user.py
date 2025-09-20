@@ -51,6 +51,11 @@ class User(Base):
     twitter_url = Column(String, nullable=True)  # Twitter profile
     website_url = Column(String, nullable=True)  # Personal website
     
+    # OAuth and verification fields
+    is_oauth_user = Column(Boolean, default=False)  # Whether user was created via OAuth
+    verification_code = Column(String, nullable=True)  # For password reset verification
+    verification_expires = Column(DateTime, nullable=True)  # Verification code expiration
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

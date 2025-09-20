@@ -66,15 +66,43 @@ def update_profile(
                 detail="Email already registered"
             )
     
-    # Update only provided fields
+    # Update only provided fields using raw SQL for guaranteed database persistence
     update_data = profile_data.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(current_user, field, value)
     
-    current_user.updated_at = datetime.utcnow()
-    db.commit()
-    # Don't refresh the user object as it may cause session issues
-    # db.refresh(current_user)
+    if update_data:
+        # Build dynamic SQL update query
+        set_clauses = []
+        params = {"user_id": current_user.id}
+        
+        for field, value in update_data.items():
+            if field in ['email', 'username', 'full_name', 'phone_number', 'department', 
+                        'student_id', 'employee_id', 'profile_picture', 'bio', 'address', 
+                        'city', 'state', 'country', 'postal_code', 'linkedin_url', 
+                        'twitter_url', 'website_url', 'performance_score', 'total_credits_earned']:
+                set_clauses.append(f"{field} = :{field}")
+                params[field] = value
+            elif field == 'date_of_birth':
+                set_clauses.append(f"{field} = :{field}")
+                params[field] = value
+        
+        if set_clauses:
+            set_clauses.append("updated_at = NOW()")
+            
+            from sqlalchemy import text
+            update_query = f"""
+                UPDATE users 
+                SET {', '.join(set_clauses)}
+                WHERE id = :user_id
+            """
+            
+            db.execute(text(update_query), params)
+            db.commit()
+            
+            # Update the current_user object for response
+            for field, value in update_data.items():
+                if hasattr(current_user, field):
+                    setattr(current_user, field, value)
+            current_user.updated_at = datetime.utcnow()
     
     # Convert User object to dictionary for Pydantic validation
     user_dict = {
@@ -104,6 +132,7 @@ def update_profile(
         "created_at": current_user.created_at,
         "updated_at": current_user.updated_at
     }
+    
     return ProfileResponse.model_validate(user_dict)
 
 @router.post("/profile/profile/password", response_model=dict)
@@ -128,7 +157,7 @@ def change_password(
     
     return {"message": "Password updated successfully"}
 
-@router.post("/profile/picture", response_model=ProfilePictureResponse)
+@router.post("/profile/profile/picture", response_model=ProfilePictureResponse)
 async def upload_profile_picture(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
@@ -167,18 +196,31 @@ async def upload_profile_picture(
     with open(file_path, "wb") as buffer:
         buffer.write(content)
     
-    # Update user's profile picture URL
+    # Update user's profile picture URL in database
     profile_picture_url = f"/uploads/profile_pictures/{unique_filename}"
+    
+    # Use raw SQL to update the database directly
+    from sqlalchemy import text
+    db.execute(text("""
+        UPDATE users 
+        SET profile_picture = :profile_picture, updated_at = NOW() 
+        WHERE id = :user_id
+    """), {
+        "profile_picture": profile_picture_url,
+        "user_id": current_user.id
+    })
+    db.commit()
+    
+    # Update the current_user object for response
     current_user.profile_picture = profile_picture_url
     current_user.updated_at = datetime.utcnow()
-    db.commit()
     
     return ProfilePictureResponse(
         profile_picture=profile_picture_url,
         message="Profile picture uploaded successfully"
     )
 
-@router.delete("/profile/picture", response_model=dict)
+@router.delete("/profile/profile/picture", response_model=dict)
 def delete_profile_picture(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -191,10 +233,18 @@ def delete_profile_picture(
         if os.path.exists(file_path):
             os.remove(file_path)
         
-        # Update database
+        # Update database using raw SQL
+        from sqlalchemy import text
+        db.execute(text("""
+            UPDATE users 
+            SET profile_picture = NULL, updated_at = NOW() 
+            WHERE id = :user_id
+        """), {"user_id": current_user.id})
+        db.commit()
+        
+        # Update the current_user object for response
         current_user.profile_picture = None
         current_user.updated_at = datetime.utcnow()
-        db.commit()
         
         return {"message": "Profile picture deleted successfully"}
     
@@ -203,7 +253,7 @@ def delete_profile_picture(
         detail="No profile picture found"
     )
 
-@router.get("/profile/picture/{user_id}")
+@router.get("/profile/profile/picture/{user_id}")
 def get_profile_picture(
     user_id: int,
     db: Session = Depends(get_db)

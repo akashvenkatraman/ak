@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -40,11 +40,7 @@ const FileManager: React.FC<FileManagerProps> = ({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadFiles();
-  }, [activityId]);
-
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     try {
       setLoading(true);
       console.log('Loading files for activity:', activityId);
@@ -57,7 +53,11 @@ const FileManager: React.FC<FileManagerProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [activityId]);
+
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

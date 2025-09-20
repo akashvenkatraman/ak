@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Box, Typography, Alert, Paper } from '@mui/material';
+import { Button, Typography, Alert, Paper } from '@mui/material';
 import { authApi } from '../services/api';
 import { UserCreate, UserRole } from '../types';
 

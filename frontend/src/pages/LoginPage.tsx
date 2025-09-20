@@ -9,11 +9,19 @@ import {
   Alert,
   Link,
   CircularProgress,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from '@mui/material';
-import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
+import { Google as GoogleIcon, Close as CloseIcon } from '@mui/icons-material';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LoginCredentials, UserRole } from '../types';
 import Logo from '../components/Logo';
+import api from '../services/api';
 
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState<LoginCredentials>({
@@ -22,12 +30,17 @@ const LoginPage: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
   
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation();
 
-  const from = (location.state as any)?.from?.pathname || '/';
+  // const from = (location.state as any)?.from?.pathname || '/';
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -70,6 +83,58 @@ const LoginPage: React.FC = () => {
       ...credentials,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setError('');
+    
+    try {
+      // Get Google OAuth URL from backend
+      const response = await api.get('/api/auth/google/url');
+      const { url } = response.data;
+      
+      // Redirect to Google OAuth
+      window.location.href = url;
+    } catch (err: any) {
+      console.error('Google OAuth error:', err);
+      if (err.response?.data?.detail?.includes('not configured')) {
+        setError('Google OAuth is not configured. Please contact administrator or use regular login.');
+      } else {
+        setError('Failed to initiate Google login. Please try again.');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      setForgotPasswordMessage('Please enter your email address.');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setForgotPasswordMessage('');
+
+    try {
+      await api.post('/api/auth/forgot-password', {
+        email: forgotPasswordEmail
+      });
+      
+      setForgotPasswordMessage('If the email exists, a verification code has been sent. Check the backend console for the code if email is not configured.');
+    } catch (err: any) {
+      console.error('Forgot password error:', err);
+      setForgotPasswordMessage('Failed to send reset email. Please try again.');
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleCloseForgotPassword = () => {
+    setForgotPasswordOpen(false);
+    setForgotPasswordEmail('');
+    setForgotPasswordMessage('');
   };
 
   return (
@@ -140,6 +205,35 @@ const LoginPage: React.FC = () => {
               >
                 {loading ? <CircularProgress size={24} /> : 'Sign In'}
               </Button>
+
+              <Box textAlign="center" sx={{ mb: 2 }}>
+                <Link 
+                  component="button" 
+                  variant="body2" 
+                  onClick={() => setForgotPasswordOpen(true)}
+                  sx={{ textDecoration: 'none', cursor: 'pointer' }}
+                >
+                  Forgot Password?
+                </Link>
+              </Box>
+
+              <Divider sx={{ my: 2 }}>
+                <Typography variant="body2" color="textSecondary">
+                  OR
+                </Typography>
+              </Divider>
+
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<GoogleIcon />}
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
+                sx={{ mb: 2 }}
+              >
+                {googleLoading ? <CircularProgress size={24} /> : 'Continue with Google'}
+              </Button>
+
               <Box textAlign="center">
                 <Link component={RouterLink} to="/register" variant="body2">
                   {"Don't have an account? Sign Up"}
@@ -149,6 +243,54 @@ const LoginPage: React.FC = () => {
           </Box>
         </Paper>
       </Box>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={forgotPasswordOpen} onClose={handleCloseForgotPassword} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">Reset Password</Typography>
+            <IconButton onClick={handleCloseForgotPassword} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Enter your email address and we'll send you a verification code to reset your password.
+          </Typography>
+          
+          <TextField
+            fullWidth
+            label="Email Address"
+            type="email"
+            value={forgotPasswordEmail}
+            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+            margin="normal"
+            disabled={forgotPasswordLoading}
+          />
+          
+          {forgotPasswordMessage && (
+            <Alert 
+              severity={forgotPasswordMessage.includes('sent') ? 'success' : 'error'} 
+              sx={{ mt: 2 }}
+            >
+              {forgotPasswordMessage}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseForgotPassword} disabled={forgotPasswordLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleForgotPassword} 
+            variant="contained" 
+            disabled={forgotPasswordLoading}
+          >
+            {forgotPasswordLoading ? <CircularProgress size={24} /> : 'Send Code'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

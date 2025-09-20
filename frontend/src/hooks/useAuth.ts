@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, LoginCredentials, UserCreate, AuthResponse } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { User, LoginCredentials, UserCreate } from '../types';
 import { authApi } from '../services/api';
 
 interface AuthContextType {
@@ -10,6 +10,7 @@ interface AuthContextType {
   register: (userData: UserCreate) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,6 +33,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user;
 
+  const logout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    setUser(null);
+  };
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await authApi.getCurrentUser();
+      const userData = response.data;
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+      logout();
+    }
+  }, []);
+
+  const updateUser = useCallback((userData: Partial<User>) => {
+    setUser(prev => {
+      if (prev) {
+        const updatedUser = { ...prev, ...userData };
+        // Update localStorage with the new user data
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+      return null;
+    });
+  }, []);
+
   // Check if user is logged in on app start
   useEffect(() => {
     const initializeAuth = async () => {
@@ -52,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     initializeAuth();
-  }, []);
+  }, [refreshUser]);
 
   const login = async (credentials: LoginCredentials) => {
     try {
@@ -81,24 +112,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
-    setUser(null);
-  };
-
-  const refreshUser = async () => {
-    try {
-      const response = await authApi.getCurrentUser();
-      const userData = response.data;
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-      console.error('Error refreshing user:', error);
-      logout();
-    }
-  };
-
   const value: AuthContextType = {
     user,
     isAuthenticated,
@@ -107,6 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     refreshUser,
+    updateUser,
   };
 
   return React.createElement(AuthContext.Provider, { value }, children);

@@ -3,7 +3,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   Box,
   Drawer,
   List,
@@ -15,6 +14,8 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Avatar,
+  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -169,12 +170,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Badge>
               </IconButton>
 
-              <IconButton
-                color="inherit"
-                onClick={(e) => setProfileMenuAnchor(e.currentTarget)}
-              >
-                <AccountCircle />
-              </IconButton>
+              <Tooltip title={`${user.full_name} (${user.role})`}>
+                <IconButton
+                  color="inherit"
+                  onClick={(e) => setProfileMenuAnchor(e.currentTarget)}
+                  sx={{ ml: 1 }}
+                >
+                  {user.profile_picture ? (
+                    <Avatar
+                      src={`http://localhost:8000${user.profile_picture}`}
+                      alt={user.full_name}
+                      sx={{ width: 32, height: 32 }}
+                    />
+                  ) : (
+                    <AccountCircle />
+                  )}
+                </IconButton>
+              </Tooltip>
 
               <Typography variant="body2" sx={{ ml: 1 }}>
                 {user.full_name} ({user.role})

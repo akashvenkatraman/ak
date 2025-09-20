@@ -12,6 +12,21 @@ class UserBase(BaseModel):
     department: Optional[str] = None
     student_id: Optional[str] = None
     employee_id: Optional[str] = None
+    performance_score: Optional[int] = 0
+    total_credits_earned: Optional[int] = 0
+    
+    # Profile fields
+    profile_picture: Optional[str] = None
+    bio: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    postal_code: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    twitter_url: Optional[str] = None
+    website_url: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -28,6 +43,21 @@ class UserUpdate(BaseModel):
     department: Optional[str] = None
     student_id: Optional[str] = None
     employee_id: Optional[str] = None
+    performance_score: Optional[int] = None
+    total_credits_earned: Optional[int] = None
+    
+    # Profile fields
+    profile_picture: Optional[str] = None
+    bio: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    postal_code: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    twitter_url: Optional[str] = None
+    website_url: Optional[str] = None
 
 class UserInDB(UserBase):
     id: int

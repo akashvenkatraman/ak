@@ -16,10 +16,28 @@ class Settings(BaseSettings):
     database_url: Optional[str] = None
     database_password: Optional[str] = "AKASHvenkat@10"  # Supabase database password
     
+    # Google OAuth Configuration
+    google_client_id: str = "123456789-abcdefghijklmnop.apps.googleusercontent.com"  # Placeholder
+    google_client_secret: str = "GOCSPX-abcdefghijklmnop"  # Placeholder
+    google_redirect_uri: str = "http://localhost:3000/auth/google/callback"
+    
+    # Email Configuration
+    mail_username: str = "test@gmail.com"  # Placeholder
+    mail_password: str = "test_password"  # Placeholder
+    mail_from: str = "test@gmail.com"  # Placeholder
+    mail_from_name: str = "Smart Student Hub"
+    mail_port: int = 587
+    mail_server: str = "smtp.gmail.com"
+    mail_tls: bool = True
+    mail_ssl: bool = False
+    use_credentials: bool = True
+    validate_certs: bool = True
+    
     # Application Configuration
     debug: bool = True
     host: str = "localhost"
     port: int = 8000
+    frontend_url: str = "http://localhost:3000"
     
     class Config:
         env_file = ".env"

@@ -25,8 +25,8 @@ def create_tables_manually():
             trans = conn.begin()
             
             try:
-                # Create users table
-                print("📝 Creating users table...")
+                # Create users table with comprehensive profile fields
+                print("📝 Creating users table with profile fields...")
                 conn.execute(text("""
                     CREATE TABLE IF NOT EXISTS users (
                         id SERIAL PRIMARY KEY,
@@ -41,6 +41,22 @@ def create_tables_manually():
                         department VARCHAR,
                         student_id VARCHAR,
                         employee_id VARCHAR,
+                        performance_score INTEGER DEFAULT 0,
+                        total_credits_earned INTEGER DEFAULT 0,
+                        
+                        -- Profile management fields
+                        profile_picture VARCHAR,
+                        bio TEXT,
+                        date_of_birth TIMESTAMP,
+                        address TEXT,
+                        city VARCHAR,
+                        state VARCHAR,
+                        country VARCHAR,
+                        postal_code VARCHAR,
+                        linkedin_url VARCHAR,
+                        twitter_url VARCHAR,
+                        website_url VARCHAR,
+                        
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                         updated_at TIMESTAMP WITH TIME ZONE
                     );

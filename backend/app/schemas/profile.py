@@ -18,6 +18,9 @@ class ProfileUpdate(BaseModel):
     linkedin_url: Optional[str] = None
     twitter_url: Optional[str] = None
     website_url: Optional[str] = None
+    profile_picture: Optional[str] = None
+    performance_score: Optional[int] = None
+    total_credits_earned: Optional[int] = None
     
     @validator('linkedin_url', 'twitter_url', 'website_url')
     def validate_urls(cls, v):

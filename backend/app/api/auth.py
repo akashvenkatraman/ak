@@ -72,7 +72,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
             
             user_row = result.fetchone()
         
-        # Create User object for response
+        # Create User object for response with all profile fields
         db_user = User(
             id=user_row.id,
             email=user_row.email,
@@ -86,6 +86,19 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
             department=user_row.department,
             student_id=user_row.student_id,
             employee_id=user_row.employee_id,
+            performance_score=user_row.performance_score,
+            total_credits_earned=user_row.total_credits_earned,
+            profile_picture=user_row.profile_picture,
+            bio=user_row.bio,
+            date_of_birth=user_row.date_of_birth,
+            address=user_row.address,
+            city=user_row.city,
+            state=user_row.state,
+            country=user_row.country,
+            postal_code=user_row.postal_code,
+            linkedin_url=user_row.linkedin_url,
+            twitter_url=user_row.twitter_url,
+            website_url=user_row.website_url,
             created_at=user_row.created_at,
             updated_at=user_row.updated_at
         )
@@ -116,7 +129,7 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         if not result:
             user = None
         else:
-            # Create User object manually
+            # Create User object manually with all profile fields
             user = User(
                 id=result.id,
                 email=result.email,
@@ -130,6 +143,19 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
                 department=result.department,
                 student_id=result.student_id,
                 employee_id=result.employee_id,
+                performance_score=result.performance_score,
+                total_credits_earned=result.total_credits_earned,
+                profile_picture=result.profile_picture,
+                bio=result.bio,
+                date_of_birth=result.date_of_birth,
+                address=result.address,
+                city=result.city,
+                state=result.state,
+                country=result.country,
+                postal_code=result.postal_code,
+                linkedin_url=result.linkedin_url,
+                twitter_url=result.twitter_url,
+                website_url=result.website_url,
                 created_at=result.created_at,
                 updated_at=result.updated_at
             )

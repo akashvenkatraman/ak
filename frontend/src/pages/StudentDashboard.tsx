@@ -31,14 +31,13 @@ import {
   Assignment,
   CheckCircle,
   Pending,
-  Cancel,
   Upload,
   Star,
   EmojiEvents,
 } from '@mui/icons-material';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { studentApi, activityLogsApi, fileApi } from '../services/api';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { studentApi, fileApi } from '../services/api';
 import { DashboardStats, Activity, ActivityType, ActivityStatus, ActivityWithFiles } from '../types';
 import FileManager from '../components/FileManager';
 import ActivityLogs from '../components/ActivityLogs';
@@ -46,7 +45,7 @@ import ActivityLogs from '../components/ActivityLogs';
 // Fix for Grid typing issues
 const GridItem = (props: any) => <Grid {...props} />;
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+// const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const StudentDashboard: React.FC = () => {
   return (

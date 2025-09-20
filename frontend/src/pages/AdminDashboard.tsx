@@ -22,7 +22,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert,
   CircularProgress,
   IconButton,
   Tooltip,
@@ -30,7 +29,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
 } from '@mui/material';
 import {
   People,
@@ -41,8 +39,8 @@ import {
   School,
   Delete,
 } from '@mui/icons-material';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { adminApi, activityLogsApi } from '../services/api';
+import { Routes, Route } from 'react-router-dom';
+import { adminApi } from '../services/api';
 import { User, UserRole, UserStatus, TeacherStudentAllocation } from '../types';
 import ActivityLogs from '../components/ActivityLogs';
 
@@ -73,7 +71,6 @@ const DashboardHome: React.FC = () => {
     totalActivities: 0,
   });
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStats = async () => {

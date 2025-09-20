@@ -5,7 +5,6 @@ import {
   LoginCredentials,
   AuthResponse,
   Activity,
-  ActivityCreate,
   ActivityApproval,
   DashboardStats,
   TeacherDashboardStats,

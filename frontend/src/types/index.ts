@@ -23,7 +23,24 @@ export interface User {
   department?: string;
   student_id?: string;
   employee_id?: string;
+  performance_score?: number;
+  total_credits_earned?: number;
+  
+  // Profile fields
+  profile_picture?: string;
+  bio?: string;
+  date_of_birth?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  website_url?: string;
+  
   created_at: string;
+  updated_at?: string;
 }
 
 export interface UserCreate {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -6,7 +6,6 @@ import {
   Typography,
   List,
   ListItem,
-  ListItemText,
   Chip,
   Divider,
   CircularProgress,
@@ -14,13 +13,10 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Grid,
-  Paper,
 } from '@mui/material';
 import {
   ExpandMore,
   Timeline,
-  Person,
   Schedule,
   Description,
   CheckCircle,
@@ -52,11 +48,7 @@ const ActivityLogs: React.FC<ActivityLogsProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadLogs();
-  }, [activityId, userId, isAdmin, isTeacher, limit]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       setLoading(true);
       let response;
@@ -78,7 +70,11 @@ const ActivityLogs: React.FC<ActivityLogsProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [activityId, userId, isAdmin, isTeacher, limit]);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
 
   const getLogIcon = (logType: ActivityLogType) => {
     switch (logType) {

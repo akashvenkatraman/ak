@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -20,7 +20,9 @@ import {
   Card,
   CardContent,
   CardActions,
-  InputAdornment
+  InputAdornment,
+  Tooltip,
+  Fade
 } from '@mui/material';
 import {
   Edit,
@@ -40,7 +42,8 @@ import {
   Web,
   Lock,
   Visibility,
-  VisibilityOff
+  VisibilityOff,
+  Info
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { profileApi } from '../services/api';
@@ -80,7 +83,7 @@ interface PasswordData {
 }
 
 const ProfilePage: React.FC = () => {
-  const { } = useAuth();
+  const { updateUser } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -100,26 +103,52 @@ const ProfilePage: React.FC = () => {
     confirm_password: ''
   });
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await profileApi.getProfile();
       setProfile(response.data);
       setFormData(response.data);
+      
+      // Update auth context with the latest profile data
+      updateUser({
+        full_name: response.data.full_name,
+        email: response.data.email,
+        phone_number: response.data.phone_number,
+        department: response.data.department,
+        student_id: response.data.student_id,
+        employee_id: response.data.employee_id,
+        performance_score: response.data.performance_score,
+        total_credits_earned: response.data.total_credits_earned,
+        profile_picture: response.data.profile_picture,
+        bio: response.data.bio,
+        date_of_birth: response.data.date_of_birth,
+        address: response.data.address,
+        city: response.data.city,
+        state: response.data.state,
+        country: response.data.country,
+        postal_code: response.data.postal_code,
+        linkedin_url: response.data.linkedin_url,
+        twitter_url: response.data.twitter_url,
+        website_url: response.data.website_url,
+        updated_at: response.data.updated_at
+      });
+      
       setLoading(false);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setSnackbar({ open: true, message: 'Failed to load profile', severity: 'error' });
       setLoading(false);
     }
-  };
+  }, [updateUser]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleEdit = () => {
     setEditing(true);
-    setFormData(profile || {});
+    // Ensure formData includes all current profile data, especially profile_picture
+    setFormData(profile ? { ...profile } : {});
   };
 
   const handleCancel = () => {
@@ -130,8 +159,36 @@ const ProfilePage: React.FC = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
+      
       const response = await profileApi.updateProfile(formData);
+      
+      // Update profile state with the response
       setProfile(response.data);
+      
+      // Update auth context with the new profile data
+      updateUser({
+        full_name: response.data.full_name,
+        email: response.data.email,
+        phone_number: response.data.phone_number,
+        department: response.data.department,
+        student_id: response.data.student_id,
+        employee_id: response.data.employee_id,
+        performance_score: response.data.performance_score,
+        total_credits_earned: response.data.total_credits_earned,
+        profile_picture: response.data.profile_picture,
+        bio: response.data.bio,
+        date_of_birth: response.data.date_of_birth,
+        address: response.data.address,
+        city: response.data.city,
+        state: response.data.state,
+        country: response.data.country,
+        postal_code: response.data.postal_code,
+        linkedin_url: response.data.linkedin_url,
+        twitter_url: response.data.twitter_url,
+        website_url: response.data.website_url,
+        updated_at: response.data.updated_at
+      });
+      
       setEditing(false);
       setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
     } catch (error: any) {
@@ -175,7 +232,15 @@ const ProfilePage: React.FC = () => {
       formData.append('file', file);
       
       const response = await profileApi.uploadProfilePicture(formData);
-      setProfile(prev => prev ? { ...prev, profile_picture: response.data.profile_picture } : null);
+      const newProfilePictureUrl = response.data.profile_picture;
+      
+      // Update both profile and formData states to keep them in sync
+      setProfile(prev => prev ? { ...prev, profile_picture: newProfilePictureUrl } : null);
+      setFormData(prev => ({ ...prev, profile_picture: newProfilePictureUrl }));
+      
+      // Update auth context with the new profile picture
+      updateUser({ profile_picture: newProfilePictureUrl });
+      
       setSnackbar({ open: true, message: 'Profile picture updated successfully', severity: 'success' });
     } catch (error: any) {
       console.error('Error uploading profile picture:', error);
@@ -193,7 +258,14 @@ const ProfilePage: React.FC = () => {
     try {
       setSaving(true);
       await profileApi.deleteProfilePicture();
+      
+      // Update both profile and formData states to keep them in sync
       setProfile(prev => prev ? { ...prev, profile_picture: undefined } : null);
+      setFormData(prev => ({ ...prev, profile_picture: undefined }));
+      
+      // Update auth context to remove the profile picture
+      updateUser({ profile_picture: undefined });
+      
       setSnackbar({ open: true, message: 'Profile picture deleted successfully', severity: 'success' });
     } catch (error: any) {
       console.error('Error deleting profile picture:', error);
@@ -258,9 +330,14 @@ const ProfilePage: React.FC = () => {
       <Paper elevation={3} sx={{ p: 4 }}>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-          <Typography variant="h4" component="h1">
-            Profile Management
-          </Typography>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Profile Management
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage your personal information and account settings
+            </Typography>
+          </Box>
           <Box>
             {!editing ? (
               <Button
@@ -268,25 +345,30 @@ const ProfilePage: React.FC = () => {
                 startIcon={<Edit />}
                 onClick={handleEdit}
                 disabled={saving}
+                size="large"
+                sx={{ minWidth: 140 }}
               >
                 Edit Profile
               </Button>
             ) : (
-              <Box>
+              <Box display="flex" gap={2}>
                 <Button
                   variant="contained"
-                  startIcon={<Save />}
+                  startIcon={saving ? <CircularProgress size={20} /> : <Save />}
                   onClick={handleSave}
                   disabled={saving}
-                  sx={{ mr: 2 }}
+                  size="large"
+                  sx={{ minWidth: 140 }}
                 >
-                  {saving ? <CircularProgress size={20} /> : 'Save Changes'}
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
                 <Button
                   variant="outlined"
                   startIcon={<Cancel />}
                   onClick={handleCancel}
                   disabled={saving}
+                  size="large"
+                  sx={{ minWidth: 100 }}
                 >
                   Cancel
                 </Button>
@@ -301,39 +383,81 @@ const ProfilePage: React.FC = () => {
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Box position="relative" display="inline-block">
-                  <Avatar
-                    src={profile.profile_picture ? `http://localhost:8000${profile.profile_picture}` : undefined}
-                    sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
-                  >
-                    {!profile.profile_picture && <Person sx={{ fontSize: 60 }} />}
-                  </Avatar>
-                  {editing && (
-                    <Box>
-                      <input
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        id="profile-picture-upload"
-                        type="file"
-                        onChange={handleProfilePictureUpload}
-                      />
+                  <Box position="relative">
+                    <Avatar
+                      src={profile.profile_picture ? `http://localhost:8000${profile.profile_picture}` : undefined}
+                      sx={{ 
+                        width: 120, 
+                        height: 120, 
+                        mx: 'auto', 
+                        mb: 2,
+                        opacity: saving ? 0.7 : 1,
+                        transition: 'opacity 0.3s ease'
+                      }}
+                    >
+                      {!profile.profile_picture && <Person sx={{ fontSize: 60 }} />}
+                    </Avatar>
+                    {saving && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          zIndex: 1
+                        }}
+                      >
+                        <CircularProgress size={30} />
+                      </Box>
+                    )}
+                  </Box>
+                  <Box sx={{ position: 'absolute', bottom: 0, right: 0 }}>
+                    <input
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="profile-picture-upload"
+                      type="file"
+                      onChange={handleProfilePictureUpload}
+                    />
+                    <Tooltip title="Upload Profile Picture" arrow>
                       <label htmlFor="profile-picture-upload">
                         <IconButton
                           color="primary"
                           component="span"
                           disabled={saving}
+                          sx={{ 
+                            bgcolor: 'primary.main', 
+                            color: 'white',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                            boxShadow: 2,
+                            transition: 'all 0.2s ease-in-out'
+                          }}
+                          size="small"
                         >
                           <PhotoCamera />
                         </IconButton>
                       </label>
-                      {profile.profile_picture && (
+                    </Tooltip>
+                  </Box>
+                  {profile.profile_picture && (
+                    <Box sx={{ position: 'absolute', bottom: 0, left: 0 }}>
+                      <Tooltip title="Delete Profile Picture" arrow>
                         <IconButton
                           color="error"
                           onClick={handleDeleteProfilePicture}
                           disabled={saving}
+                          sx={{ 
+                            bgcolor: 'error.main', 
+                            color: 'white',
+                            '&:hover': { bgcolor: 'error.dark' },
+                            boxShadow: 2,
+                            transition: 'all 0.2s ease-in-out'
+                          }}
+                          size="small"
                         >
                           <Delete />
                         </IconButton>
-                      )}
+                      </Tooltip>
                     </Box>
                   )}
                 </Box>
@@ -354,10 +478,34 @@ const ProfilePage: React.FC = () => {
                   />
                 </Box>
                 {profile.bio && (
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {profile.bio}
                   </Typography>
                 )}
+                <Box sx={{ 
+                  bgcolor: 'info.light', 
+                  p: 2, 
+                  borderRadius: 1, 
+                  border: '1px solid', 
+                  borderColor: 'info.main',
+                  mb: 2
+                }}>
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <Info color="info" sx={{ mr: 1, fontSize: 20 }} />
+                    <Typography variant="subtitle2" color="info.dark">
+                      Profile Picture Tips
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="info.dark" display="block">
+                    • Supported formats: JPEG, PNG, GIF, WebP
+                  </Typography>
+                  <Typography variant="caption" color="info.dark" display="block">
+                    • Maximum file size: 5MB
+                  </Typography>
+                  <Typography variant="caption" color="info.dark" display="block">
+                    • Recommended size: 400x400 pixels
+                  </Typography>
+                </Box>
               </CardContent>
               <CardActions sx={{ justifyContent: 'center' }}>
                 <Button
@@ -376,10 +524,28 @@ const ProfilePage: React.FC = () => {
           <Box flex={{ xs: '1', md: '0 0 66.666%' }}>
             <Box display="flex" flexDirection="column" gap={3}>
               {/* Basic Information */}
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Basic Information
-                </Typography>
+              <Box sx={{ 
+                bgcolor: editing ? 'action.hover' : 'transparent', 
+                p: editing ? 2 : 0, 
+                borderRadius: 1,
+                transition: 'all 0.3s ease-in-out'
+              }}>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                    Basic Information
+                  </Typography>
+                  {editing && (
+                    <Fade in={editing}>
+                      <Chip 
+                        icon={<Edit />} 
+                        label="Editing" 
+                        color="primary" 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    </Fade>
+                  )}
+                </Box>
                 <Divider sx={{ mb: 2 }} />
               </Box>
 
@@ -390,10 +556,11 @@ const ProfilePage: React.FC = () => {
                   value={editing ? formData.full_name || '' : profile.full_name}
                   onChange={(e) => handleInputChange('full_name', e.target.value)}
                   disabled={!editing}
+                  variant={editing ? "outlined" : "filled"}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Person />
+                        <Person color={editing ? "primary" : "action"} />
                       </InputAdornment>
                     ),
                   }}
@@ -405,10 +572,11 @@ const ProfilePage: React.FC = () => {
                   value={editing ? formData.email || '' : profile.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   disabled={!editing}
+                  variant={editing ? "outlined" : "filled"}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Email />
+                        <Email color={editing ? "primary" : "action"} />
                       </InputAdornment>
                     ),
                   }}
@@ -421,10 +589,11 @@ const ProfilePage: React.FC = () => {
                   label="Username"
                   value={profile.username}
                   disabled
+                  variant="filled"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Person />
+                        <Person color="action" />
                       </InputAdornment>
                     ),
                   }}
@@ -435,10 +604,11 @@ const ProfilePage: React.FC = () => {
                   value={editing ? formData.phone_number || '' : profile.phone_number || ''}
                   onChange={(e) => handleInputChange('phone_number', e.target.value)}
                   disabled={!editing}
+                  variant={editing ? "outlined" : "filled"}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Phone />
+                        <Phone color={editing ? "primary" : "action"} />
                       </InputAdornment>
                     ),
                   }}
@@ -477,10 +647,28 @@ const ProfilePage: React.FC = () => {
               </Box>
 
               {/* Personal Information */}
-              <Box>
-                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                  Personal Information
-                </Typography>
+              <Box sx={{ 
+                bgcolor: editing ? 'action.hover' : 'transparent', 
+                p: editing ? 2 : 0, 
+                borderRadius: 1,
+                transition: 'all 0.3s ease-in-out'
+              }}>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                    Personal Information
+                  </Typography>
+                  {editing && (
+                    <Fade in={editing}>
+                      <Chip 
+                        icon={<Edit />} 
+                        label="Editing" 
+                        color="primary" 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    </Fade>
+                  )}
+                </Box>
                 <Divider sx={{ mb: 2 }} />
               </Box>
 
@@ -517,10 +705,28 @@ const ProfilePage: React.FC = () => {
               </Box>
 
               {/* Address Information */}
-              <Box>
-                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                  Address Information
-                </Typography>
+              <Box sx={{ 
+                bgcolor: editing ? 'action.hover' : 'transparent', 
+                p: editing ? 2 : 0, 
+                borderRadius: 1,
+                transition: 'all 0.3s ease-in-out'
+              }}>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                    Address Information
+                  </Typography>
+                  {editing && (
+                    <Fade in={editing}>
+                      <Chip 
+                        icon={<Edit />} 
+                        label="Editing" 
+                        color="primary" 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    </Fade>
+                  )}
+                </Box>
                 <Divider sx={{ mb: 2 }} />
               </Box>
 
@@ -578,10 +784,28 @@ const ProfilePage: React.FC = () => {
               </Box>
 
               {/* Social Links */}
-              <Box>
-                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                  Social Links
-                </Typography>
+              <Box sx={{ 
+                bgcolor: editing ? 'action.hover' : 'transparent', 
+                p: editing ? 2 : 0, 
+                borderRadius: 1,
+                transition: 'all 0.3s ease-in-out'
+              }}>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                    Social Links
+                  </Typography>
+                  {editing && (
+                    <Fade in={editing}>
+                      <Chip 
+                        icon={<Edit />} 
+                        label="Editing" 
+                        color="primary" 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    </Fade>
+                  )}
+                </Box>
                 <Divider sx={{ mb: 2 }} />
               </Box>
 

@@ -35,14 +35,13 @@ import {
   Pending,
   Visibility,
   Download,
-  Comment,
   Cancel,
 } from '@mui/icons-material';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { teacherApi, downloadFile, fileApi, activityLogsApi } from '../services/api';
-import { TeacherDashboardStats, Activity, ActivityStatus, User, ActivityApproval, ActivityWithFiles } from '../types';
+import { teacherApi } from '../services/api';
+import { TeacherDashboardStats, Activity, ActivityStatus, User } from '../types';
 import FileManager from '../components/FileManager';
-import ActivityLogs from '../components/ActivityLogs';
+// import ActivityLogs from '../components/ActivityLogs';
 
 // Fix for Grid typing issues
 const GridItem = (props: any) => <Grid {...props} />;
@@ -422,18 +421,18 @@ const PendingActivitiesPage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: ActivityStatus) => {
-    switch (status) {
-      case ActivityStatus.APPROVED:
-        return 'success';
-      case ActivityStatus.PENDING:
-        return 'warning';
-      case ActivityStatus.REJECTED:
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+  // const getStatusColor = (status: ActivityStatus) => {
+  //   switch (status) {
+  //     case ActivityStatus.APPROVED:
+  //       return 'success';
+  //     case ActivityStatus.PENDING:
+  //       return 'warning';
+  //     case ActivityStatus.REJECTED:
+  //       return 'error';
+  //     default:
+  //       return 'default';
+  //   }
+  // };
 
   if (loading) {
     return (

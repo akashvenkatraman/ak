@@ -78,7 +78,7 @@ def get_current_user(
                 detail="User not found"
             )
         
-        # Create User object manually
+        # Create User object manually with all profile fields
         user = User(
             id=result.id,
             email=result.email,
@@ -92,6 +92,19 @@ def get_current_user(
             department=result.department,
             student_id=result.student_id,
             employee_id=result.employee_id,
+            performance_score=result.performance_score,
+            total_credits_earned=result.total_credits_earned,
+            profile_picture=result.profile_picture,
+            bio=result.bio,
+            date_of_birth=result.date_of_birth,
+            address=result.address,
+            city=result.city,
+            state=result.state,
+            country=result.country,
+            postal_code=result.postal_code,
+            linkedin_url=result.linkedin_url,
+            twitter_url=result.twitter_url,
+            website_url=result.website_url,
             created_at=result.created_at,
             updated_at=result.updated_at
         )
