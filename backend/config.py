@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     # Supabase Configuration
     supabase_url: str = "https://ieugtoltckngbxreohcv.supabase.co"
     supabase_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldWd0b2x0Y2tuZ2J4cmVvaGN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTgwNjEsImV4cCI6MjA3Mzg3NDA2MX0.UIR-69xAM1vUJDc7Y9KC4fYrCBHTS-56M4qtzRqMShk"
-    supabase_service_key: str = "your_supabase_service_key_here"  # You'll need to get this from Supabase dashboard
+    supabase_service_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldWd0b2x0Y2tuZ2J4cmVvaGN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODI5ODA2MSwiZXhwIjoyMDczODc0MDYxfQ.placeholder"  # We need the actual service key
     
     # JWT Configuration
     secret_key: str = "Dkq5f+z+8bsnHu+Dqa2fZSncaCGvC1dgYzFITE773w6H1IX94GiPk7WYQNlYGcTEz9Cz00JEz+RwlEig7/umGA=="

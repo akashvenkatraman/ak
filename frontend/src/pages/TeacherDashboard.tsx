@@ -36,11 +36,23 @@ import {
   Visibility,
   Download,
   Cancel,
+  School,
+  Group,
+  TrendingUp,
+  EmojiEvents,
+  Star,
+  Add,
+  Assessment,
+  History,
+  RateReview,
 } from '@mui/icons-material';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { teacherApi } from '../services/api';
+import GlassPendingReviewsUI from '../components/GlassPendingReviewsUI';
 import { TeacherDashboardStats, Activity, ActivityStatus, User } from '../types';
 import FileManager from '../components/FileManager';
+import MagicBento, { BentoCardProps } from '../components/MagicBento';
+import './TeacherDashboard.css';
 // import ActivityLogs from '../components/ActivityLogs';
 
 // Fix for Grid typing issues
@@ -87,172 +99,112 @@ const DashboardHome: React.FC = () => {
     );
   }
 
+  // Magic Bento data for Teacher Dashboard
+  const bentoData: BentoCardProps[] = [
+    {
+      color: '#4CAF50',
+      gradient: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+      title: 'Assigned Students',
+      description: 'Students under your guidance',
+      label: 'Students',
+      icon: <People sx={{ fontSize: 40 }} />,
+      value: stats?.total_students || 0,
+      size: 'medium',
+      onClick: () => navigate('/teacher/students')
+    },
+    {
+      color: '#FF9800',
+      gradient: 'linear-gradient(135deg, #FF9800 0%, #f57c00 100%)',
+      title: 'Pending Approvals',
+      description: 'Activities waiting for your review',
+      label: 'Pending',
+      icon: <Pending sx={{ fontSize: 40 }} />,
+      value: stats?.pending_approvals || 0,
+      size: 'medium',
+      onClick: () => navigate('/teacher/pending')
+    },
+    {
+      color: '#1976d2',
+      gradient: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+      title: 'Activities Reviewed',
+      description: 'Total activities you have reviewed',
+      label: 'Reviewed',
+      icon: <CheckCircle sx={{ fontSize: 40 }} />,
+      value: stats?.total_activities_reviewed || 0,
+      size: 'medium',
+      onClick: () => navigate('/teacher/approvals')
+    },
+    {
+      color: '#9C27B0',
+      gradient: 'linear-gradient(135deg, #9C27B0 0%, #7b1fa2 100%)',
+      title: 'Recent Submissions',
+      description: 'Latest student submissions',
+      label: 'Recent',
+      icon: <Assignment sx={{ fontSize: 40 }} />,
+      value: stats?.recent_submissions?.length || 0,
+      size: 'medium',
+      onClick: () => navigate('/teacher/activities')
+    },
+    {
+      color: '#00BCD4',
+      gradient: 'linear-gradient(135deg, #00BCD4 0%, #0097a7 100%)',
+      title: 'Review Activities',
+      description: 'Start reviewing pending activities',
+      label: 'Action',
+      icon: <RateReview sx={{ fontSize: 40 }} />,
+      size: 'large',
+      onClick: () => navigate('/teacher/pending')
+    },
+    {
+      color: '#FF5722',
+      gradient: 'linear-gradient(135deg, #FF5722 0%, #d84315 100%)',
+      title: 'All Activities',
+      description: 'View all student activities',
+      label: 'Overview',
+      icon: <Assessment sx={{ fontSize: 40 }} />,
+      size: 'medium',
+      onClick: () => navigate('/teacher/activities')
+    },
+    {
+      color: '#795548',
+      gradient: 'linear-gradient(135deg, #795548 0%, #5d4037 100%)',
+      title: 'Approval History',
+      description: 'Track your review history',
+      label: 'History',
+      icon: <History sx={{ fontSize: 40 }} />,
+      size: 'medium',
+      onClick: () => navigate('/teacher/approvals')
+    },
+    {
+      color: '#607D8B',
+      gradient: 'linear-gradient(135deg, #607D8B 0%, #455a64 100%)',
+      title: 'Teaching Analytics',
+      description: 'Analyze your teaching impact',
+      label: 'Analytics',
+      icon: <TrendingUp sx={{ fontSize: 40 }} />,
+      size: 'medium',
+      onClick: () => navigate('/teacher/approvals')
+    }
+  ];
+
+  const handleCardClick = (card: BentoCardProps) => {
+    if (card.onClick) {
+      card.onClick();
+    }
+  };
+
+  console.log('Rendering Teacher MagicBento with data:', bentoData);
+
   return (
-    <Box>
-        <Typography variant="h4" gutterBottom>
-          Teacher Dashboard
-        </Typography>
-
-
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <People color="primary" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Assigned Students
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.total_students || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <Pending color="warning" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Pending Approvals
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.pending_approvals || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <CheckCircle color="success" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Activities Reviewed
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.total_activities_reviewed || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <Assignment color="secondary" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Recent Submissions
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.recent_submissions?.length || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-      </Grid>
-
-      {/* Recent Submissions */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <GridItem item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Recent Submissions
-            </Typography>
-            
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Student</TableCell>
-                    <TableCell>Activity</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Submitted</TableCell>
-                    <TableCell>Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {stats?.recent_submissions?.map((activity) => (
-                    <TableRow key={activity.id}>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="bold">
-                          {activity.student_name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {activity.title}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={activity.activity_type.replace('_', ' ').toUpperCase()}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={activity.status?.toUpperCase() || 'PENDING'}
-                          size="small"
-                          color={
-                            activity.status === 'approved' ? 'success' :
-                            activity.status === 'rejected' ? 'error' :
-                            'warning'
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" color="textSecondary">
-                          {new Date(activity.created_at).toLocaleDateString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<Visibility />}
-                          onClick={() => navigate('/teacher/pending')}
-                        >
-                          Review
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )) || []}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            
-            {(!stats?.recent_submissions || stats.recent_submissions.length === 0) && (
-              <Box textAlign="center" py={4}>
-                <Typography variant="body2" color="textSecondary">
-                  No recent submissions
-                </Typography>
-              </Box>
-            )}
-          </Paper>
-        </GridItem>
-      </Grid>
-    </Box>
+    <MagicBento
+      data={bentoData}
+      enableParticles={true}
+      enableGlow={true}
+      enableTilt={true}
+      glowColor="25, 118, 210"
+      onCardClick={handleCardClick}
+      title="Teacher Dashboard"
+    />
   );
 };
 
@@ -263,10 +215,13 @@ const StudentsPage: React.FC = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
+        console.log('🔍 Fetching students...');
         const response = await teacherApi.getAssignedStudents();
+        console.log('🔍 Students response:', response);
+        console.log('🔍 Students data:', response.data);
         setStudents(response.data);
       } catch (error) {
-        console.error('Error fetching students:', error);
+        console.error('❌ Error fetching students:', error);
       } finally {
         setLoading(false);
       }
@@ -284,47 +239,99 @@ const StudentsPage: React.FC = () => {
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        My Students
-      </Typography>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Student ID</TableCell>
-              <TableCell>Department</TableCell>
-              <TableCell>Phone</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {students.map((student) => (
-              <TableRow key={student.id}>
-                <TableCell>{student.full_name}</TableCell>
-                <TableCell>{student.email}</TableCell>
-                <TableCell>{student.student_id || '-'}</TableCell>
-                <TableCell>{student.department || '-'}</TableCell>
-                <TableCell>{student.phone_number || '-'}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {students.length === 0 && (
-        <Box textAlign="center" mt={4}>
-          <Typography variant="h6" color="textSecondary">
-            No students assigned
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Contact your administrator to get students assigned to you.
-          </Typography>
-        </Box>
-      )}
-    </Box>
+    <GlassPendingReviewsUI 
+      title="My Students" 
+      subtitle="View and manage your assigned students"
+    >
+      <Box>
+        <Typography variant="h4" gutterBottom sx={{ color: '#333', mb: 3 }}>
+          Allocated Students ({students.length})
+        </Typography>
+        
+        {students.length > 0 ? (
+          <TableContainer 
+            component={Paper}
+            sx={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: 2,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden'
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow sx={{ background: 'rgba(255, 255, 255, 0.1)' }}>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Name</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Email</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Student ID</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Department</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Phone</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {students.map((student, index) => (
+                  <TableRow 
+                    key={student.id}
+                    sx={{
+                      '&:hover': {
+                        background: 'rgba(255, 255, 255, 0.3)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      },
+                      transition: 'all 0.3s ease',
+                      '& td': {
+                        color: '#333',
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        fontWeight: '500'
+                      }
+                    }}
+                  >
+                    <TableCell>{student.full_name}</TableCell>
+                    <TableCell>{student.email}</TableCell>
+                    <TableCell>{student.student_id || '-'}</TableCell>
+                    <TableCell>{student.department || '-'}</TableCell>
+                    <TableCell>{student.phone_number || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Box 
+            textAlign="center" 
+            mt={4}
+            sx={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: 2,
+              p: 4,
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <Typography 
+              variant="h6" 
+              sx={{
+                color: '#666',
+                mb: 2
+              }}
+            >
+              No students assigned
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{
+                color: '#888'
+              }}
+            >
+              Contact your administrator to get students assigned to you.
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    </GlassPendingReviewsUI>
   );
 };
 
@@ -443,12 +450,23 @@ const PendingActivitiesPage: React.FC = () => {
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Pending Activities for Review
-      </Typography>
+    <GlassPendingReviewsUI 
+      title="Pending Activities for Review" 
+      subtitle="Review and approve student activity submissions"
+    >
+      <Box>
+        <Typography variant="h4" gutterBottom sx={{ color: '#333', mb: 3 }}>
+          Pending Activities for Review
+        </Typography>
 
-      <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{
+          background: 'rgba(255, 255, 255, 0.2)',
+          backdropFilter: 'blur(30px)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden'
+        }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -704,7 +722,8 @@ const PendingActivitiesPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </GlassPendingReviewsUI>
   );
 };
 
@@ -760,43 +779,86 @@ const AllActivitiesPage: React.FC = () => {
   }
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">
-          All Activities
-        </Typography>
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Filter</InputLabel>
-          <Select
-            value={filter}
-            label="Filter"
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <MenuItem value="all">All</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="approved">Approved</MenuItem>
-            <MenuItem value="rejected">Rejected</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+    <GlassPendingReviewsUI 
+      title="All Activities" 
+      subtitle="View and manage all student activities"
+    >
+      <Box>
+        <Box 
+          display="flex" 
+          justifyContent="space-between" 
+          alignItems="center" 
+          mb={4}
+          sx={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: 2,
+            p: 3,
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <Typography variant="h4" sx={{ color: '#333', fontWeight: 'bold' }}>
+            All Activities ({activities.length})
+          </Typography>
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>Filter</InputLabel>
+            <Select
+              value={filter}
+              label="Filter"
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="approved">Approved</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Student</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Credits</TableCell>
-              <TableCell>Files</TableCell>
-              <TableCell>Submitted</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {activities.map((activity) => (
-              <TableRow key={activity.id}>
+        {activities.length > 0 ? (
+          <TableContainer 
+            component={Paper}
+            sx={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: 2,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden'
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow sx={{ background: 'rgba(255, 255, 255, 0.1)' }}>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Student</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Title</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Type</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Status</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Credits</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Files</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Submitted</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {activities.map((activity, index) => (
+                  <TableRow 
+                    key={activity.id}
+                    sx={{
+                      '&:hover': {
+                        background: 'rgba(255, 255, 255, 0.3)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      },
+                      transition: 'all 0.3s ease',
+                      '& td': {
+                        color: '#333',
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        fontWeight: '500'
+                      }
+                    }}
+                  >
                 <TableCell>{activity.student_name}</TableCell>
                 <TableCell>{activity.title}</TableCell>
                 <TableCell>
@@ -846,21 +908,43 @@ const AllActivitiesPage: React.FC = () => {
                   )}
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {activities.length === 0 && (
-        <Box textAlign="center" mt={4}>
-          <Typography variant="h6" color="textSecondary">
-            No activities found
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            {filter === 'all' ? 'No activities have been submitted yet.' : `No ${filter} activities found.`}
-          </Typography>
-        </Box>
-      )}
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Box 
+            textAlign="center" 
+            mt={4}
+            sx={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: 2,
+              p: 4,
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <Typography 
+              variant="h6" 
+              sx={{
+                color: '#666',
+                mb: 2
+              }}
+            >
+              No activities found
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{
+                color: '#888'
+              }}
+            >
+              {filter === 'all' ? 'No activities have been submitted yet.' : `No ${filter} activities found.`}
+            </Typography>
+          </Box>
+        )}
+      </Box>
 
       {/* Files Dialog */}
       <Dialog
@@ -898,7 +982,7 @@ const AllActivitiesPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </GlassPendingReviewsUI>
   );
 };
 
@@ -952,19 +1036,36 @@ const ApprovalsPage: React.FC = () => {
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Approval History
-      </Typography>
+    <GlassPendingReviewsUI 
+      title="Approval History" 
+      subtitle="Track and manage student activity approvals"
+    >
+      <Box>
+        <Typography variant="h4" gutterBottom sx={{ color: '#333', mb: 3 }}>
+          Approval History ({filteredApprovals.length})
+        </Typography>
 
-      {/* Filters */}
-      <Box mb={3} display="flex" gap={2} flexWrap="wrap">
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Filter by Status</InputLabel>
-          <Select
-            value={filter.status || ''}
-            label="Filter by Status"
-            onChange={(e) => setFilter({ ...filter, status: e.target.value || undefined })}
+        {/* Filters */}
+        <Box 
+          mb={4} 
+          display="flex" 
+          gap={2} 
+          flexWrap="wrap"
+          sx={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: 2,
+            p: 3,
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel>Filter by Status</InputLabel>
+            <Select
+              value={filter.status || ''}
+              label="Filter by Status"
+              onChange={(e) => setFilter({ ...filter, status: e.target.value || undefined })}
           >
             <MenuItem value="">All</MenuItem>
             <MenuItem value="approved">Approved</MenuItem>
@@ -972,39 +1073,64 @@ const ApprovalsPage: React.FC = () => {
           </Select>
         </FormControl>
         
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>Date Range</InputLabel>
-          <Select
-            value={filter.dateRange || ''}
-            label="Date Range"
-            onChange={(e) => setFilter({ ...filter, dateRange: e.target.value || undefined })}
-          >
-            <MenuItem value="">All Time</MenuItem>
-            <MenuItem value="today">Today</MenuItem>
-            <MenuItem value="week">Last 7 Days</MenuItem>
-            <MenuItem value="month">Last 30 Days</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel>Date Range</InputLabel>
+            <Select
+              value={filter.dateRange || ''}
+              label="Date Range"
+              onChange={(e) => setFilter({ ...filter, dateRange: e.target.value || undefined })}
+            >
+              <MenuItem value="">All Time</MenuItem>
+              <MenuItem value="today">Today</MenuItem>
+              <MenuItem value="week">Last 7 Days</MenuItem>
+              <MenuItem value="month">Last 30 Days</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
-      {/* Approval History Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Student</TableCell>
-              <TableCell>Activity</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Decision</TableCell>
-              <TableCell>Credits Awarded</TableCell>
-              <TableCell>Comments</TableCell>
-              <TableCell>Approved Date</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredApprovals.map((approval) => (
-              <TableRow key={approval.id}>
+        {/* Approval History Table */}
+        {filteredApprovals.length > 0 ? (
+          <TableContainer 
+            component={Paper}
+            sx={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: 2,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden'
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow sx={{ background: 'rgba(255, 255, 255, 0.1)' }}>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Student</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Activity</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Type</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Decision</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Credits Awarded</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Comments</TableCell>
+                  <TableCell sx={{ color: '#333', fontWeight: 'bold', borderColor: 'rgba(0, 0, 0, 0.1)' }}>Approved Date</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredApprovals.map((approval, index) => (
+                  <TableRow 
+                    key={approval.id}
+                    sx={{
+                      '&:hover': {
+                        background: 'rgba(255, 255, 255, 0.3)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      },
+                      transition: 'all 0.3s ease',
+                      '& td': {
+                        color: '#333',
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        fontWeight: '500'
+                      }
+                    }}
+                  >
                 <TableCell>
                   <Box>
                     <Typography variant="body2" fontWeight="bold">
@@ -1098,78 +1224,48 @@ const ApprovalsPage: React.FC = () => {
                   </Box>
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {filteredApprovals.length === 0 && (
-        <Box textAlign="center" py={4}>
-          <Typography variant="h6" color="textSecondary">
-            No approval history found
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            {filter.status || filter.dateRange 
-              ? 'Try adjusting your filters' 
-              : 'You haven\'t reviewed any activities yet'
-            }
-          </Typography>
-        </Box>
-      )}
-
-      {/* Summary Stats */}
-      {filteredApprovals.length > 0 && (
-        <Box mt={3}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Summary Statistics
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Box 
+            textAlign="center" 
+            mt={4}
+            sx={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: 2,
+              p: 4,
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <Typography 
+              variant="h6" 
+              sx={{
+                color: '#666',
+                mb: 2
+              }}
+            >
+              No approval history found
             </Typography>
-            <Grid container spacing={2}>
-              <GridItem item xs={12} sm={3}>
-                <Box textAlign="center">
-                  <Typography variant="h4" color="primary">
-                    {filteredApprovals.length}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Total Reviews
-                  </Typography>
-                </Box>
-              </GridItem>
-              <GridItem item xs={12} sm={3}>
-                <Box textAlign="center">
-                  <Typography variant="h4" color="success.main">
-                    {filteredApprovals.filter(a => a.status === 'approved').length}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Approved
-                  </Typography>
-                </Box>
-              </GridItem>
-              <GridItem item xs={12} sm={3}>
-                <Box textAlign="center">
-                  <Typography variant="h4" color="error.main">
-                    {filteredApprovals.filter(a => a.status === 'rejected').length}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Rejected
-                  </Typography>
-                </Box>
-              </GridItem>
-              <GridItem item xs={12} sm={3}>
-                <Box textAlign="center">
-                  <Typography variant="h4" color="warning.main">
-                    {filteredApprovals.reduce((sum, a) => sum + (a.credits_awarded || 0), 0)}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Total Credits Awarded
-                  </Typography>
-                </Box>
-              </GridItem>
-            </Grid>
-          </Paper>
-        </Box>
-      )}
-    </Box>
+            <Typography 
+              variant="body2" 
+              sx={{
+                color: '#888'
+              }}
+            >
+              {filter.status || filter.dateRange 
+                ? 'Try adjusting your filters' 
+                : 'You haven\'t reviewed any activities yet'
+              }
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    </GlassPendingReviewsUI>
+
   );
 };
 

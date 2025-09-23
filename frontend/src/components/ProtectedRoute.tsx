@@ -13,7 +13,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
+  console.log('🛡️ ProtectedRoute: Checking access...', {
+    isLoading,
+    isAuthenticated,
+    user: user ? { username: user.username, role: user.role, status: user.status } : null,
+    allowedRoles
+  });
+
   if (isLoading) {
+    console.log('🛡️ ProtectedRoute: Still loading...');
     return (
       <Box
         display="flex"
@@ -27,14 +35,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
 
   if (!isAuthenticated) {
+    console.log('🛡️ ProtectedRoute: Not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (!user) {
+    console.log('🛡️ ProtectedRoute: No user data, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
-  if (user.status !== UserStatus.APPROVED) {
+  // Check if user status is approved (case-insensitive)
+  const userStatus = user.status?.toLowerCase();
+  const isApproved = userStatus === 'approved' || userStatus === UserStatus.APPROVED.toLowerCase();
+  
+  if (!isApproved) {
+    console.log('🛡️ ProtectedRoute: User not approved, status:', user.status);
     return (
       <Box
         display="flex"
@@ -45,15 +60,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
       >
         <h2>Account Pending Approval</h2>
         <p>Your account is pending approval from an administrator.</p>
+        <p>Status: {user.status}</p>
         <p>Please contact your institution for assistance.</p>
       </Box>
     );
   }
 
   if (!allowedRoles.includes(user.role)) {
+    console.log('🛡️ ProtectedRoute: Role not allowed, user role:', user.role, 'allowed:', allowedRoles);
     return <Navigate to="/login" replace />;
   }
 
+  console.log('🛡️ ProtectedRoute: Access granted');
   return <>{children}</>;
 };
 

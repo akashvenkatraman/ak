@@ -105,7 +105,7 @@ async def reset_password(reset_data: PasswordResetVerify, db: Session = Depends(
         
         db.execute(text("""
             UPDATE users 
-            SET hashed_password = :password, updated_at = NOW()
+            SET hashed_password = :password, updated_at = datetime('now')
             WHERE email = :email
         """), {
             "password": hashed_password,

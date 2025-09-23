@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connection</title>
+</head>
+<body>
+    <h1>Test Backend Connection</h1>
+    <div id="status"></div>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testActivitySubmission()">Test Activity Submission</button>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let authToken = null;
+
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('status').innerHTML = `✅ Backend is running: ${data.status}`;
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Backend connection failed: ${error.message}`;
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'akashv',
+                        password: 'password123'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.access_token;
+                    document.getElementById('status').innerHTML = `✅ Login successful! Token: ${authToken.substring(0, 20)}...`;
+                } else {
+                    const error = await response.text();
+                    document.getElementById('status').innerHTML = `❌ Login failed: ${error}`;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Login error: ${error.message}`;
+            }
+        }
+
+        async function testActivitySubmission() {
+            if (!authToken) {
+                document.getElementById('status').innerHTML = '❌ Please login first!';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', 'Test Activity');
+            formData.append('description', 'Test Description');
+            formData.append('activity_type', 'conference');
+            formData.append('credits', '1');
+            formData.append('start_date', '2025-01-09');
+            formData.append('end_date', '2025-02-09');
+
+            try {
+                const response = await fetch(`${API_BASE}/students/activities`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('status').innerHTML = `✅ Activity submitted successfully! ID: ${data.id}`;
+                } else {
+                    const error = await response.text();
+                    document.getElementById('status').innerHTML = `❌ Activity submission failed: ${error}`;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Activity submission error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

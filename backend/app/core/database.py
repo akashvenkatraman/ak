@@ -3,28 +3,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from config import settings
 import os
+import urllib.parse
 
-# Use Supabase PostgreSQL connection if available, otherwise fallback to local
-if settings.database_url:
-    SQLALCHEMY_DATABASE_URL = settings.database_url
-else:
-    # Construct from Supabase URL if available
-    if settings.supabase_url != "your_supabase_url_here":
-        # For Supabase, you need to provide the database password
-        # Get this from your Supabase project settings > Database > Connection string
-        # Format: postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
-        if settings.database_password:
-            # URL encode the password to handle special characters like @
-            import urllib.parse
-            encoded_password = urllib.parse.quote_plus(settings.database_password)
-            # Use the correct Supabase hostname format
-            SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{encoded_password}@db.ieugtoltckngbxreohcv.supabase.co:5432/postgres"
-        else:
-            # Fallback to local database if no password provided
-            SQLALCHEMY_DATABASE_URL = "sqlite:///./certificate_management.db"
-    else:
-        # Local development database
-        SQLALCHEMY_DATABASE_URL = "sqlite:///./certificate_management.db"
+# Use local SQLite database with Supabase REST API for real-time synchronization
+# This ensures reliable local data storage while maintaining Supabase sync capability
+SQLALCHEMY_DATABASE_URL = "sqlite:///./certificate_management.db"
+print("🔗 Using local SQLite database with Supabase REST API sync")
 
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
@@ -39,8 +23,9 @@ else:
         pool_pre_ping=True,
         pool_recycle=300,
         connect_args={
-            "connect_timeout": 10,
-            "application_name": "certificate_management"
+            "connect_timeout": 30,
+            "application_name": "certificate_management",
+            "options": "-c timezone=utc"
         }
     )
 

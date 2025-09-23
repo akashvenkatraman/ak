@@ -1,4 +1,64 @@
-from authlib.integrations.httpx_client import OAuth2Session
+try:
+    # Prefer the httpx integration if available
+    from authlib.integrations.httpx_client import OAuth2Session  # type: ignore
+except Exception:
+    try:
+        # Older/newer installations may expose the requests integration
+        from authlib.integrations.requests_client import OAuth2Session  # type: ignore
+    except Exception:
+        # Fallback: define a minimal shim that provides the few methods this module uses.
+        # This avoids hard dependency failures in environments where authlib's
+        # integrations package layout differs. The shim uses `httpx` under the hood
+        # to perform token fetches and build authorization URLs.
+        from urllib.parse import urlencode, urljoin
+        import httpx
+
+        class OAuth2Session:
+            def __init__(self, client_id=None, redirect_uri=None, scope=None):
+                self.client_id = client_id
+                self.redirect_uri = redirect_uri
+                self.scope = scope or []
+
+            def authorization_url(self, base_url, **kwargs):
+                params = {
+                    "client_id": self.client_id,
+                    "redirect_uri": self.redirect_uri,
+                    "response_type": "code",
+                    "scope": " ".join(self.scope),
+                }
+                params.update(kwargs)
+                url = base_url + "?" + urlencode(params)
+                # No state handling in shim; return None for state
+                return url, None
+
+            def fetch_token(self, token_url, authorization_response=None, client_secret=None):
+                # authorization_response is expected to be the full redirect URL or the code
+                # Accept both forms: if it contains 'code=' parse it, otherwise treat it as code
+                code = None
+                if authorization_response:
+                    if "code=" in authorization_response:
+                        # extract code query param
+                        from urllib.parse import parse_qs, urlparse
+                        qs = urlparse(authorization_response).query
+                        data = parse_qs(qs)
+                        code = data.get("code", [None])[0]
+                    else:
+                        code = authorization_response
+
+                if not code:
+                    raise ValueError("No authorization code provided to fetch_token")
+
+                payload = {
+                    "code": code,
+                    "client_id": self.client_id,
+                    "client_secret": client_secret,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": self.redirect_uri,
+                }
+
+                resp = httpx.post(token_url, data=payload, timeout=10)
+                resp.raise_for_status()
+                return resp.json()
 from config import settings
 import httpx
 from typing import Optional, Dict, Any

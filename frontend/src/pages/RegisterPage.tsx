@@ -256,15 +256,74 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="md" sx={{ py: 4 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: `
+          linear-gradient(135deg, 
+            #1e3c72 0%, 
+            #2a5298 25%, 
+            #87ceeb 50%, 
+            #98fb98 75%, 
+            #f0e68c 100%
+          )
+        `,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: { xs: 2, sm: 3, md: 4 },
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Jammu Kashmir inspired background elements */}
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          minHeight: '100vh',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `
+            radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at 85% 80%, rgba(135, 206, 235, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(152, 251, 152, 0.15) 0%, transparent 60%),
+            linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%)
+          `,
+          zIndex: 0
         }}
-      >
+      />
+      
+      {/* Mountain silhouette effect */}
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '200px',
+          background: `
+            linear-gradient(45deg, 
+              rgba(30, 60, 114, 0.3) 0%, 
+              rgba(42, 82, 152, 0.2) 30%, 
+              rgba(135, 206, 235, 0.1) 70%, 
+              transparent 100%
+            )
+          `,
+          clipPath: 'polygon(0 100%, 0 60%, 20% 40%, 40% 50%, 60% 30%, 80% 45%, 100% 35%, 100% 100%)',
+          zIndex: 0
+        }}
+      />
+
+      <Container component="main" maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            minHeight: '100vh',
+          }}
+        >
         {/* Header with Logo */}
         <Box
           sx={{
@@ -283,24 +342,57 @@ const RegisterPage: React.FC = () => {
           </Typography>
         </Box>
 
-        <Paper elevation={6} sx={{ 
+        <Paper elevation={24} sx={{ 
           padding: { xs: 3, sm: 4, md: 5 }, 
           width: '100%',
           maxWidth: 600,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
+          borderRadius: 4,
+          background: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(25px)',
+          border: '2px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: `
+            0 32px 100px rgba(30, 60, 114, 0.4),
+            0 0 80px rgba(135, 206, 235, 0.2),
+            0 0 40px rgba(152, 251, 152, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6)
+          `,
+          position: 'relative',
+          overflow: 'hidden'
         }}>
+          {/* Jammu Kashmir inspired pattern */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `
+                linear-gradient(45deg, transparent 30%, rgba(30, 60, 114, 0.02) 50%, transparent 70%),
+                linear-gradient(-45deg, transparent 30%, rgba(135, 206, 235, 0.03) 50%, transparent 70%),
+                radial-gradient(circle at 20% 80%, rgba(152, 251, 152, 0.02) 0%, transparent 50%)
+              `,
+              zIndex: 0
+            }}
+          />
+
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              position: 'relative',
+              zIndex: 1
             }}
           >
             <Typography component="h2" variant="h4" gutterBottom sx={{ 
               fontWeight: 600,
-              color: 'primary.main',
-              textAlign: 'center'
+              background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #87ceeb 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textAlign: 'center',
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}>
               Create Account
             </Typography>
@@ -574,15 +666,21 @@ const RegisterPage: React.FC = () => {
                   py: 1.5,
                   fontSize: '1.1rem',
                   fontWeight: 600,
-                  borderRadius: 2,
-                  background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #87ceeb 100%)',
+                  boxShadow: '0 8px 32px rgba(30, 60, 114, 0.4), 0 0 20px rgba(135, 206, 235, 0.2)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
+                    background: 'linear-gradient(135deg, #1a3462 0%, #1e3c72 50%, #2a5298 100%)',
+                    boxShadow: '0 12px 40px rgba(30, 60, 114, 0.5), 0 0 30px rgba(135, 206, 235, 0.3)',
+                    transform: 'translateY(-2px)'
                   },
                   '&:disabled': {
                     background: '#e0e0e0',
                     color: '#9e9e9e',
-                  }
+                    boxShadow: 'none',
+                    transform: 'none'
+                  },
+                  transition: 'all 0.3s ease-in-out'
                 }}
                 disabled={loading || !isFormValid()}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CheckCircle />}
@@ -646,8 +744,9 @@ const RegisterPage: React.FC = () => {
             </Box>
           </Box>
         </Paper>
-      </Box>
-    </Container>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

@@ -43,7 +43,8 @@ import {
   Lock,
   Visibility,
   VisibilityOff,
-  Info
+  Info,
+  PictureAsPdf
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { profileApi } from '../services/api';
@@ -95,6 +96,7 @@ const ProfilePage: React.FC = () => {
     confirm: false
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   
   const [formData, setFormData] = useState<Partial<ProfileData>>({});
   const [passwordData, setPasswordData] = useState<PasswordData>({
@@ -276,6 +278,256 @@ const ProfilePage: React.FC = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const generatePDFPortfolio = async () => {
+    try {
+      setGeneratingPDF(true);
+      
+      // Create a new window for PDF generation
+      const pdfWindow = window.open('', '_blank');
+      if (!pdfWindow) {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      }
+
+      // Get user certificates (mock data for now - you can replace with actual API call)
+      const certificates = [
+        { name: 'Web Development Certificate', date: '2024-01-15', issuer: 'Smart Student Hub' },
+        { name: 'Data Structures Certificate', date: '2024-01-10', issuer: 'Smart Student Hub' },
+        { name: 'Machine Learning Certificate', date: '2024-01-05', issuer: 'Smart Student Hub' }
+      ];
+
+      // Generate HTML content for PDF
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${profile?.full_name || 'User'} - Portfolio</title>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              margin: 0;
+              padding: 20px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              min-height: 100vh;
+            }
+            .container {
+              max-width: 800px;
+              margin: 0 auto;
+              background: white;
+              border-radius: 10px;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+              overflow: hidden;
+            }
+            .header {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 40px;
+              text-align: center;
+            }
+            .profile-pic {
+              width: 120px;
+              height: 120px;
+              border-radius: 50%;
+              border: 4px solid white;
+              margin-bottom: 20px;
+              object-fit: cover;
+            }
+            .name {
+              font-size: 2.5em;
+              margin: 0;
+              font-weight: bold;
+            }
+            .role {
+              font-size: 1.2em;
+              margin: 10px 0;
+              opacity: 0.9;
+            }
+            .content {
+              padding: 40px;
+            }
+            .section {
+              margin-bottom: 30px;
+            }
+            .section-title {
+              font-size: 1.5em;
+              color: #333;
+              border-bottom: 2px solid #667eea;
+              padding-bottom: 10px;
+              margin-bottom: 20px;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              margin-bottom: 20px;
+            }
+            .info-item {
+              display: flex;
+              align-items: center;
+              margin-bottom: 10px;
+            }
+            .info-label {
+              font-weight: bold;
+              color: #666;
+              min-width: 120px;
+            }
+            .info-value {
+              color: #333;
+            }
+            .certificates {
+              display: grid;
+              gap: 15px;
+            }
+            .certificate {
+              background: #f8f9fa;
+              padding: 15px;
+              border-radius: 8px;
+              border-left: 4px solid #667eea;
+            }
+            .cert-name {
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 5px;
+            }
+            .cert-details {
+              color: #666;
+              font-size: 0.9em;
+            }
+            .footer {
+              background: #f8f9fa;
+              padding: 20px;
+              text-align: center;
+              color: #666;
+              border-top: 1px solid #eee;
+            }
+            @media print {
+              body { background: white; }
+              .container { box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              ${profile?.profile_picture ? 
+                `<img src="${profile.profile_picture.startsWith('http') ? profile.profile_picture : `http://localhost:8000${profile.profile_picture}`}" alt="Profile" class="profile-pic">` :
+                `<div style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 3em; color: #999;">👤</div>`
+              }
+              <h1 class="name">${profile?.full_name || 'User Name'}</h1>
+              <p class="role">${profile?.role || 'Student'} • ${profile?.department || 'Department'}</p>
+            </div>
+            
+            <div class="content">
+              <div class="section">
+                <h2 class="section-title">Personal Information</h2>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">${profile?.email || 'N/A'}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">${profile?.phone_number || 'N/A'}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Student ID:</span>
+                    <span class="info-value">${profile?.student_id || profile?.employee_id || 'N/A'}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Department:</span>
+                    <span class="info-value">${profile?.department || 'N/A'}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Date of Birth:</span>
+                    <span class="info-value">${profile?.date_of_birth || 'N/A'}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Location:</span>
+                    <span class="info-value">${profile?.city || 'N/A'}, ${profile?.state || 'N/A'}</span>
+                  </div>
+                </div>
+                ${profile?.bio ? `
+                  <div class="info-item">
+                    <span class="info-label">Bio:</span>
+                    <span class="info-value">${profile.bio}</span>
+                  </div>
+                ` : ''}
+              </div>
+
+              <div class="section">
+                <h2 class="section-title">Certificates & Achievements</h2>
+                <div class="certificates">
+                  ${certificates.map(cert => `
+                    <div class="certificate">
+                      <div class="cert-name">${cert.name}</div>
+                      <div class="cert-details">
+                        Issued by: ${cert.issuer} | Date: ${cert.date}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="section">
+                <h2 class="section-title">Contact Information</h2>
+                <div class="info-grid">
+                  ${profile?.linkedin_url ? `
+                    <div class="info-item">
+                      <span class="info-label">LinkedIn:</span>
+                      <span class="info-value">${profile.linkedin_url}</span>
+                    </div>
+                  ` : ''}
+                  ${profile?.twitter_url ? `
+                    <div class="info-item">
+                      <span class="info-label">Twitter:</span>
+                      <span class="info-value">${profile.twitter_url}</span>
+                    </div>
+                  ` : ''}
+                  ${profile?.website_url ? `
+                    <div class="info-item">
+                      <span class="info-label">Website:</span>
+                      <span class="info-value">${profile.website_url}</span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>Generated on ${new Date().toLocaleDateString()} | Smart Student Hub Portfolio</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Write HTML to the new window
+      pdfWindow.document.write(htmlContent);
+      pdfWindow.document.close();
+
+      // Wait for content to load, then trigger print
+      setTimeout(() => {
+        pdfWindow.print();
+        pdfWindow.close();
+      }, 1000);
+
+      setSnackbar({ 
+        open: true, 
+        message: 'PDF Portfolio generated successfully!', 
+        severity: 'success' 
+      });
+
+    } catch (error: any) {
+      console.error('Error generating PDF:', error);
+      setSnackbar({ 
+        open: true, 
+        message: error.message || 'Failed to generate PDF portfolio', 
+        severity: 'error' 
+      });
+    } finally {
+      setGeneratingPDF(false);
     }
   };
 
@@ -507,7 +759,7 @@ const ProfilePage: React.FC = () => {
                   </Typography>
                 </Box>
               </CardContent>
-              <CardActions sx={{ justifyContent: 'center' }}>
+              <CardActions sx={{ justifyContent: 'center', gap: 2 }}>
                 <Button
                   variant="outlined"
                   startIcon={<Lock />}
@@ -515,6 +767,20 @@ const ProfilePage: React.FC = () => {
                   disabled={saving}
                 >
                   Change Password
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={generatingPDF ? <CircularProgress size={20} /> : <PictureAsPdf />}
+                  onClick={generatePDFPortfolio}
+                  disabled={generatingPDF || saving}
+                  sx={{
+                    background: 'linear-gradient(45deg, #ff6b6b 30%, #ee5a24 90%)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #ff5252 30%, #e74c3c 90%)',
+                    }
+                  }}
+                >
+                  {generatingPDF ? 'Generating...' : 'Generate PDF Portfolio'}
                 </Button>
               </CardActions>
             </Card>

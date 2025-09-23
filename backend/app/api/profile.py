@@ -86,7 +86,7 @@ def update_profile(
                 params[field] = value
         
         if set_clauses:
-            set_clauses.append("updated_at = NOW()")
+            set_clauses.append("updated_at = datetime('now')")
             
             from sqlalchemy import text
             update_query = f"""
@@ -203,7 +203,7 @@ async def upload_profile_picture(
     from sqlalchemy import text
     db.execute(text("""
         UPDATE users 
-        SET profile_picture = :profile_picture, updated_at = NOW() 
+        SET profile_picture = :profile_picture, updated_at = datetime('now') 
         WHERE id = :user_id
     """), {
         "profile_picture": profile_picture_url,
@@ -237,7 +237,7 @@ def delete_profile_picture(
         from sqlalchemy import text
         db.execute(text("""
             UPDATE users 
-            SET profile_picture = NULL, updated_at = NOW() 
+            SET profile_picture = NULL, updated_at = datetime('now') 
             WHERE id = :user_id
         """), {"user_id": current_user.id})
         db.commit()

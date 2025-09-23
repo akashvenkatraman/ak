@@ -2,7 +2,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.database import create_tables, Base, engine
-from app.api import auth, admin, students, teachers, websocket, health, files, activity_logs, notifications, profile, oauth
+from app.api import auth, admin, students, teachers, websocket, health, files, activity_logs, notifications, profile, oauth, file_uploads, erp_integration, user_storage
+from export_endpoints import router as export_router
+from analytics_endpoints import router as analytics_router
+from sample_data_endpoints import router as sample_data_router
 from config import settings
 import os
 
@@ -45,6 +48,12 @@ app.include_router(activity_logs.router)
 app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 app.include_router(profile.router, tags=["profile"])
 app.include_router(oauth.router, prefix="/api", tags=["oauth"])
+app.include_router(file_uploads.router, prefix="/api", tags=["file-uploads"])
+app.include_router(user_storage.router, prefix="/api/storage", tags=["user-storage"])
+app.include_router(erp_integration.router, tags=["ERP Integration"])
+app.include_router(export_router, tags=["Data Export"])
+app.include_router(analytics_router, tags=["Analytics"])
+app.include_router(sample_data_router, tags=["Sample Data"])
 
 @app.on_event("startup")
 async def startup_event():

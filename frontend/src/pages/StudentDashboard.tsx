@@ -34,6 +34,9 @@ import {
   Upload,
   Star,
   EmojiEvents,
+  TrendingUp,
+  School,
+  Group,
 } from '@mui/icons-material';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -41,6 +44,7 @@ import { studentApi, fileApi } from '../services/api';
 import { DashboardStats, Activity, ActivityType, ActivityStatus, ActivityWithFiles } from '../types';
 import FileManager from '../components/FileManager';
 import ActivityLogs from '../components/ActivityLogs';
+import MagicBento, { BentoCardProps } from '../components/MagicBento';
 
 // Fix for Grid typing issues
 const GridItem = (props: any) => <Grid {...props} />;
@@ -111,245 +115,112 @@ const DashboardHome: React.FC = () => {
     }
   };
 
-  return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Student Dashboard
-      </Typography>
+  // Magic Bento data
+  const bentoData: BentoCardProps[] = [
+    {
+      color: '#4CAF50',
+      gradient: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+      title: 'Approved Activities',
+      description: 'Your successfully approved activities',
+      label: 'Success',
+      icon: <CheckCircle sx={{ fontSize: 40 }} />,
+      value: stats?.approved_activities || 0,
+      size: 'medium',
+      onClick: () => navigate('/student/activities?status=approved')
+    },
+    {
+      color: '#FF9800',
+      gradient: 'linear-gradient(135deg, #FF9800 0%, #f57c00 100%)',
+      title: 'Pending Activities',
+      description: 'Activities waiting for approval',
+      label: 'Pending',
+      icon: <Pending sx={{ fontSize: 40 }} />,
+      value: stats?.pending_activities || 0,
+      size: 'medium',
+      onClick: () => navigate('/student/activities?status=pending')
+    },
+    {
+      color: '#1976d2',
+      gradient: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+      title: 'Total Credits',
+      description: 'Credits earned from activities',
+      label: 'Achievement',
+      icon: <Star sx={{ fontSize: 40 }} />,
+      value: stats?.total_credits || 0,
+      size: 'medium',
+      onClick: () => navigate('/student/performance')
+    },
+    {
+      color: '#9C27B0',
+      gradient: 'linear-gradient(135deg, #9C27B0 0%, #7b1fa2 100%)',
+      title: 'Performance Score',
+      description: 'Your overall performance rating',
+      label: 'Excellence',
+      icon: <EmojiEvents sx={{ fontSize: 40 }} />,
+      value: stats?.performance_score || 0,
+      size: 'medium',
+      onClick: () => navigate('/student/performance')
+    },
+    {
+      color: '#00BCD4',
+      gradient: 'linear-gradient(135deg, #00BCD4 0%, #0097a7 100%)',
+      title: 'Add New Activity',
+      description: 'Submit a new activity for approval',
+      label: 'Action',
+      icon: <Add sx={{ fontSize: 40 }} />,
+      size: 'large',
+      onClick: () => navigate('/student/add-activity')
+    },
+    {
+      color: '#FF5722',
+      gradient: 'linear-gradient(135deg, #FF5722 0%, #d84315 100%)',
+      title: 'View All Activities',
+      description: 'Browse through all your activities',
+      label: 'Overview',
+      icon: <Assignment sx={{ fontSize: 40 }} />,
+      size: 'medium',
+      onClick: () => navigate('/student/activities')
+    },
+    {
+      color: '#795548',
+      gradient: 'linear-gradient(135deg, #795548 0%, #5d4037 100%)',
+      title: 'Recent Activities',
+      description: `Latest ${recentActivities.length} activities`,
+      label: 'Recent',
+      icon: <TrendingUp sx={{ fontSize: 40 }} />,
+      size: 'medium',
+      onClick: () => navigate('/student/activities')
+    },
+    {
+      color: '#607D8B',
+      gradient: 'linear-gradient(135deg, #607D8B 0%, #455a64 100%)',
+      title: 'Academic Progress',
+      description: 'Track your academic journey',
+      label: 'Progress',
+      icon: <School sx={{ fontSize: 40 }} />,
+      size: 'medium',
+      onClick: () => navigate('/student/performance')
+    }
+  ];
 
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <Assignment color="primary" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Total Activities
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.total_activities || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
+  const handleCardClick = (card: BentoCardProps) => {
+    if (card.onClick) {
+      card.onClick();
+    }
+  };
 
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <CheckCircle color="success" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Approved
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.approved_activities || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <Pending color="warning" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Pending Review
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.pending_activities || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <Assignment color="secondary" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Total Credits
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.total_credits || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <Star color="warning" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Performance Score
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.performance_score || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-
-        <GridItem item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <EmojiEvents color="success" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Credits Earned
-                  </Typography>
-                  <Typography variant="h4">
-                    {stats?.total_credits_earned || 0}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </GridItem>
-      </Grid>
-
-      <Grid container spacing={3}>
-        {/* Activity Status Chart */}
-        <GridItem item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Activity Status Distribution
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </Paper>
-        </GridItem>
-
-        {/* Recent Activities */}
-        <GridItem item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">
-                Recent Activities
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => navigate('/student/add-activity')}
-              >
-                Add Activity
-              </Button>
-            </Box>
-            
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Title</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Credits</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {recentActivities.map((activity) => (
-                    <TableRow key={activity.id}>
-                      <TableCell>{activity.title}</TableCell>
-                      <TableCell>
-                        {activity.activity_type.replace('_', ' ').toUpperCase()}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={activity.status}
-                          color={getStatusColor(activity.status) as any}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{activity.credits}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            
-            {recentActivities.length === 0 && (
-              <Typography variant="body2" color="textSecondary" textAlign="center" sx={{ mt: 2 }}>
-                No activities yet. Start by adding your first activity!
-              </Typography>
-            )}
-          </Paper>
-        </GridItem>
-
-        {/* Performance Summary */}
-        {(stats?.gpa || stats?.attendance_percentage) && (
-          <GridItem item xs={12}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Academic Performance
-              </Typography>
-              <Grid container spacing={3}>
-                {stats.gpa && (
-                  <GridItem item xs={12} sm={6}>
-                    <Box textAlign="center">
-                      <Typography variant="h3" color="primary">
-                        {stats.gpa.toFixed(2)}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Current GPA
-                      </Typography>
-                    </Box>
-                  </GridItem>
-                )}
-                {stats.attendance_percentage && (
-                  <GridItem item xs={12} sm={6}>
-                    <Box textAlign="center">
-                      <Typography variant="h3" color="primary">
-                        {stats.attendance_percentage.toFixed(1)}%
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Attendance
-                      </Typography>
-                    </Box>
-                  </GridItem>
-                )}
-              </Grid>
-            </Paper>
-          </GridItem>
-        )}
-      </Grid>
-    </Box>
+  console.log('Rendering MagicBento with data:', bentoData);
+  
+      return (
+        <MagicBento
+          data={bentoData}
+          enableParticles={true}
+          enableGlow={true}
+          enableTilt={true}
+          glowColor="25, 118, 210"
+          onCardClick={handleCardClick}
+          title="Student Dashboard"
+        />
   );
 };
 
@@ -611,19 +482,43 @@ const AddActivityPage: React.FC = () => {
     setLoading(true);
 
     try {
+      console.log('🚀 Starting activity submission...');
+      console.log('📝 Form data:', formData);
+      
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        formDataToSend.append(key, value.toString());
+        let processedValue = value;
+        
+        // Convert date fields to ISO format for backend compatibility
+        if ((key === 'start_date' || key === 'end_date') && value) {
+          // Convert YYYY-MM-DD to ISO format (YYYY-MM-DDTHH:MM:SSZ)
+          processedValue = new Date(value + 'T00:00:00Z').toISOString();
+          console.log(`📅 Converted ${key}: ${value} -> ${processedValue}`);
+        }
+        
+        formDataToSend.append(key, processedValue.toString());
+        console.log(`📋 Added to FormData: ${key} = ${processedValue}`);
       });
       
       if (file) {
         formDataToSend.append('certificate_file', file);
+        console.log('📎 Added file to FormData:', file.name);
       }
 
-      await studentApi.createActivity(formDataToSend);
+      console.log('🔐 Checking authentication...');
+      const token = localStorage.getItem('access_token');
+      console.log('🔑 Token exists:', !!token);
+      
+      console.log('📤 Sending request to API...');
+      const response = await studentApi.createActivity(formDataToSend);
+      console.log('✅ API response:', response.data);
+      
       setSuccess('Activity submitted successfully!');
       setTimeout(() => navigate('/student/activities'), 2000);
     } catch (err: any) {
+      console.error('❌ Activity submission error:', err);
+      console.error('❌ Error response:', err.response);
+      console.error('❌ Error data:', err.response?.data);
       setError(err.response?.data?.detail || 'Failed to submit activity');
     } finally {
       setLoading(false);

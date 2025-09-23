@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 8px; margin-bottom: 10px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login Debug Test</h1>
+        <p>This page tests the login functionality directly.</p>
+        
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" value="admin" placeholder="Enter username">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="admin123" placeholder="Enter password">
+        </div>
+        
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="testConnection()">Test Backend Connection</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = 'Testing backend connection...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Backend connection successful!<br>Response: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Backend connection failed!<br>Status: ${response.status} ${response.statusText}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Backend connection error!<br>Error: ${error.message}`;
+            }
+        }
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = 'Testing login...';
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ Please enter both username and password';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Login successful!<br>
+                        <strong>User:</strong> ${data.user.username}<br>
+                        <strong>Role:</strong> ${data.user.role}<br>
+                        <strong>Status:</strong> ${data.user.status}<br>
+                        <strong>Token:</strong> ${data.access_token.substring(0, 50)}...`;
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Login failed!<br>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Error:</strong> ${errorData.detail || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Login error!<br>Error: ${error.message}`;
+            }
+        }
+        
+        // Test connection on page load
+        window.onload = function() {
+            testConnection();
+        };
+    </script>
+</body>
+</html>

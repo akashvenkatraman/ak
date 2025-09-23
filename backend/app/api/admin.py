@@ -1,6 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List, Optional
+import csv
+import io
+from datetime import datetime
 from app.core.database import get_db
 from app.core.auth import get_admin_user
 from app.models.user import User, UserRole, UserStatus, TeacherStudentAllocation
@@ -10,8 +15,106 @@ from app.schemas.user import (
     TeacherStudentAllocationCreate,
     TeacherStudentAllocationResponse
 )
+from fast_auth_service import fast_auth
+from app.services.erp_integration_service import erp_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+@router.get("/users", response_model=List[UserResponse])
+def get_all_users(
+    role: Optional[UserRole] = Query(None),
+    status: Optional[UserStatus] = Query(None),
+    current_admin: User = Depends(get_admin_user)
+):
+    """Get all users with fast local database access"""
+    try:
+        # Get users from fast auth service
+        users_data = fast_auth.get_users()
+        
+        # Filter by role if specified
+        if role:
+            role_str = role.value.lower() if hasattr(role, 'value') else str(role).lower()
+            users_data = [user for user in users_data if user.get('role') == role_str]
+        
+        # Filter by status if specified
+        if status:
+            status_str = status.value.lower() if hasattr(status, 'value') else str(status).lower()
+            users_data = [user for user in users_data if user.get('status') == status_str]
+        
+        # Convert to User objects
+        users = []
+        for user_data in users_data:
+            user = User(
+                id=user_data["id"],
+                email=user_data["email"],
+                username=user_data["username"],
+                full_name=user_data["full_name"],
+                hashed_password=None,  # Don't return hashed password
+                role=user_data["role"],
+                status=user_data["status"],
+                is_active=user_data["is_active"],
+                phone_number=user_data["phone_number"],
+                department=user_data["department"],
+                student_id=user_data["student_id"],
+                employee_id=user_data["employee_id"],
+                performance_score=user_data["performance_score"] or 0,
+                total_credits_earned=user_data["total_credits_earned"] or 0,
+                profile_picture=user_data["profile_picture"],
+                bio=user_data["bio"],
+                date_of_birth=user_data["date_of_birth"],
+                address=user_data["address"],
+                city=user_data["city"],
+                state=user_data["state"],
+                country=user_data["country"],
+                postal_code=user_data["postal_code"],
+                linkedin_url=user_data["linkedin_url"],
+                twitter_url=user_data["twitter_url"],
+                website_url=user_data["website_url"],
+                is_oauth_user=user_data["is_oauth_user"] or False,
+                verification_code=user_data["verification_code"],
+                verification_expires=user_data["verification_expires"],
+                created_at=user_data["created_at"],
+                updated_at=user_data["updated_at"]
+            )
+            users.append(user)
+        
+        return users
+        
+    except Exception as e:
+        print(f"Error getting users: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve users"
+        )
+
+@router.get("/database-stats")
+def get_database_stats(current_admin: User = Depends(get_admin_user)):
+    """Get real-time database statistics"""
+    try:
+        stats = fast_auth.get_database_stats()
+        return stats
+    except Exception as e:
+        print(f"Error getting database stats: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve database statistics"
+        )
+
+@router.post("/sync-supabase")
+def sync_with_supabase(current_admin: User = Depends(get_admin_user)):
+    """Manually sync with Supabase"""
+    try:
+        success = hybrid_db.sync_with_supabase()
+        if success:
+            return {"message": "Successfully synced with Supabase", "status": "success"}
+        else:
+            return {"message": "Sync failed - check Supabase connection", "status": "error"}
+    except Exception as e:
+        print(f"Error syncing with Supabase: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to sync with Supabase"
+        )
 
 @router.get("/pending-users", response_model=List[UserResponse])
 def get_pending_users(
@@ -91,7 +194,7 @@ def approve_user(
     # Update user status using raw SQL
     db.execute(text("""
         UPDATE users 
-        SET status = :status, updated_at = NOW() 
+        SET status = :status, updated_at = datetime('now') 
         WHERE id = :user_id
     """), {
         "status": approval_data.status.value.upper(),
@@ -105,64 +208,6 @@ def approve_user(
         "status": approval_data.status
     }
 
-@router.get("/users", response_model=List[UserResponse])
-def get_all_users(
-    role: Optional[UserRole] = Query(None),
-    status: Optional[UserStatus] = Query(None),
-    db: Session = Depends(get_db),
-    current_admin: User = Depends(get_admin_user)
-):
-    """Get all users with optional filtering"""
-    from sqlalchemy import text
-    
-    # Build WHERE clause
-    where_conditions = []
-    params = {}
-    
-    if role:
-        role_str = role.value.lower() if hasattr(role, 'value') else str(role).lower()
-        where_conditions.append("role = :role")
-        params["role"] = role_str
-    
-    if status:
-        status_str = status.value.lower() if hasattr(status, 'value') else str(status).lower()
-        where_conditions.append("status = :status")
-        params["status"] = status_str
-    
-    where_clause = ""
-    if where_conditions:
-        where_clause = "WHERE " + " AND ".join(where_conditions)
-    
-    # Use raw SQL to avoid enum issues
-    result = db.execute(text(f"""
-        SELECT id, email, username, full_name, role, status, is_active, phone_number, 
-               department, student_id, employee_id, created_at, updated_at
-        FROM users 
-        {where_clause}
-        ORDER BY created_at DESC
-    """), params)
-    
-    users = []
-    for row in result.fetchall():
-        user = User(
-            id=row.id,
-            email=row.email,
-            username=row.username,
-            full_name=row.full_name,
-            hashed_password="",  # Don't return password
-            role=row.role.lower(),  # Convert to lowercase for enum compatibility
-            status=row.status.lower(),  # Convert to lowercase for enum compatibility
-            is_active=row.is_active,
-            phone_number=row.phone_number,
-            department=row.department,
-            student_id=row.student_id,
-            employee_id=row.employee_id,
-            created_at=row.created_at,
-            updated_at=row.updated_at
-        )
-        users.append(user)
-    
-    return users
 
 @router.get("/teachers", response_model=List[UserResponse])
 def get_approved_teachers(
@@ -239,6 +284,37 @@ def allocate_students_to_teacher(
             allocations_created.append(student_id)
     
     db.commit()
+    
+    # Sync to Supabase
+    try:
+        from app.core.supabase_client import get_supabase_client
+        supabase = get_supabase_client()
+        
+        # Get the created allocations for Supabase sync
+        created_allocations = db.query(TeacherStudentAllocation).filter(
+            TeacherStudentAllocation.teacher_id == allocation_data.teacher_id,
+            TeacherStudentAllocation.student_id.in_(allocations_created)
+        ).all()
+        
+        # Prepare data for Supabase
+        supabase_data = []
+        for allocation in created_allocations:
+            supabase_data.append({
+                "id": allocation.id,
+                "teacher_id": allocation.teacher_id,
+                "student_id": allocation.student_id,
+                "allocated_by": allocation.allocated_by,
+                "created_at": allocation.created_at.isoformat() if allocation.created_at else None
+            })
+        
+        if supabase_data:
+            # Insert into Supabase
+            result = supabase.table("teacher_student_allocations").insert(supabase_data).execute()
+            print(f"✅ Synced {len(supabase_data)} allocations to Supabase")
+            
+    except Exception as e:
+        print(f"⚠️ Failed to sync allocations to Supabase: {e}")
+        # Don't fail the request if Supabase sync fails
     
     return {
         "message": f"Successfully allocated {len(allocations_created)} students to teacher",

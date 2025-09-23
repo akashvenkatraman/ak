@@ -12,6 +12,7 @@ from app.core.auth import (
 from app.models.user import User, UserRole, UserStatus
 from app.schemas.user import UserCreate, UserResponse, Token, UserLogin
 from config import settings
+from fast_auth_service import fast_auth
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -53,9 +54,9 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         from app.core.database import engine
         with engine.begin() as conn:
             result = conn.execute(text("""
-                INSERT INTO users (email, username, full_name, hashed_password, role, status, is_active, phone_number, department, student_id, employee_id, created_at)
-                VALUES (:email, :username, :full_name, :hashed_password, :role, :status, :is_active, :phone_number, :department, :student_id, :employee_id, NOW())
-                RETURNING id, email, username, full_name, role, status, is_active, phone_number, department, student_id, employee_id, created_at, updated_at
+                INSERT INTO users (email, username, full_name, hashed_password, role, status, is_active, phone_number, department, student_id, employee_id, performance_score, total_credits_earned, profile_picture, bio, date_of_birth, address, city, state, country, postal_code, linkedin_url, twitter_url, website_url, is_oauth_user, verification_code, verification_expires, created_at)
+                VALUES (:email, :username, :full_name, :hashed_password, :role, :status, :is_active, :phone_number, :department, :student_id, :employee_id, :performance_score, :total_credits_earned, :profile_picture, :bio, :date_of_birth, :address, :city, :state, :country, :postal_code, :linkedin_url, :twitter_url, :website_url, :is_oauth_user, :verification_code, :verification_expires, datetime('now'))
+                RETURNING id, email, username, full_name, role, status, is_active, phone_number, department, student_id, employee_id, performance_score, total_credits_earned, profile_picture, bio, date_of_birth, address, city, state, country, postal_code, linkedin_url, twitter_url, website_url, is_oauth_user, verification_code, verification_expires, created_at, updated_at
             """), {
                 "email": user_data.email,
                 "username": user_data.username,
@@ -67,7 +68,23 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
                 "phone_number": user_data.phone_number,
                 "department": user_data.department,
                 "student_id": user_data.student_id,
-                "employee_id": user_data.employee_id
+                "employee_id": user_data.employee_id,
+                "performance_score": 0,
+                "total_credits_earned": 0,
+                "profile_picture": None,
+                "bio": None,
+                "date_of_birth": None,
+                "address": None,
+                "city": None,
+                "state": None,
+                "country": None,
+                "postal_code": None,
+                "linkedin_url": None,
+                "twitter_url": None,
+                "website_url": None,
+                "is_oauth_user": False,
+                "verification_code": None,
+                "verification_expires": None
             })
             
             user_row = result.fetchone()
@@ -86,8 +103,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
             department=user_row.department,
             student_id=user_row.student_id,
             employee_id=user_row.employee_id,
-            performance_score=user_row.performance_score,
-            total_credits_earned=user_row.total_credits_earned,
+            performance_score=user_row.performance_score or 0,
+            total_credits_earned=user_row.total_credits_earned or 0,
             profile_picture=user_row.profile_picture,
             bio=user_row.bio,
             date_of_birth=user_row.date_of_birth,
@@ -99,6 +116,9 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
             linkedin_url=user_row.linkedin_url,
             twitter_url=user_row.twitter_url,
             website_url=user_row.website_url,
+            is_oauth_user=user_row.is_oauth_user or False,
+            verification_code=user_row.verification_code,
+            verification_expires=user_row.verification_expires,
             created_at=user_row.created_at,
             updated_at=user_row.updated_at
         )
@@ -121,86 +141,96 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     """Login user and return access token"""
     
     try:
-        # Find user by username using raw SQL to avoid enum issues
-        from sqlalchemy import text
-        result = db.execute(text("SELECT * FROM users WHERE username = :username"), 
-                          {"username": user_credentials.username}).fetchone()
+        # Use fast auth service to get user data (local database only)
+        user_data = fast_auth.get_user_by_username(user_credentials.username)
         
-        if not result:
-            user = None
-        else:
-            # Create User object manually with all profile fields
-            user = User(
-                id=result.id,
-                email=result.email,
-                username=result.username,
-                full_name=result.full_name,
-                hashed_password=result.hashed_password,
-                role=result.role.lower(),  # Convert to lowercase for enum compatibility
-                status=result.status.lower(),  # Convert to lowercase for enum compatibility
-                is_active=result.is_active,
-                phone_number=result.phone_number,
-                department=result.department,
-                student_id=result.student_id,
-                employee_id=result.employee_id,
-                performance_score=result.performance_score,
-                total_credits_earned=result.total_credits_earned,
-                profile_picture=result.profile_picture,
-                bio=result.bio,
-                date_of_birth=result.date_of_birth,
-                address=result.address,
-                city=result.city,
-                state=result.state,
-                country=result.country,
-                postal_code=result.postal_code,
-                linkedin_url=result.linkedin_url,
-                twitter_url=result.twitter_url,
-                website_url=result.website_url,
-                created_at=result.created_at,
-                updated_at=result.updated_at
+        if not user_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
             )
+        
+        # Verify password
+        if not verify_password(user_credentials.password, user_data["hashed_password"]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Check user status
+        if user_data["status"] != "approved":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is pending approval or has been rejected"
+            )
+        
+        if not user_data["is_active"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is inactive"
+            )
+        
+        # Create User object for response
+        user = User(
+            id=user_data["id"],
+            email=user_data["email"],
+            username=user_data["username"],
+            full_name=user_data["full_name"],
+            hashed_password=None,  # Don't return hashed password
+            role=user_data["role"],
+            status=user_data["status"],
+            is_active=user_data["is_active"],
+            phone_number=user_data["phone_number"],
+            department=user_data["department"],
+            student_id=user_data["student_id"],
+            employee_id=user_data["employee_id"],
+            performance_score=user_data["performance_score"] or 0,
+            total_credits_earned=user_data["total_credits_earned"] or 0,
+            profile_picture=user_data["profile_picture"],
+            bio=user_data["bio"],
+            date_of_birth=user_data["date_of_birth"],
+            address=user_data["address"],
+            city=user_data["city"],
+            state=user_data["state"],
+            country=user_data["country"],
+            postal_code=user_data["postal_code"],
+            linkedin_url=user_data["linkedin_url"],
+            twitter_url=user_data["twitter_url"],
+            website_url=user_data["website_url"],
+            is_oauth_user=user_data["is_oauth_user"] or False,
+            verification_code=user_data["verification_code"],
+            verification_expires=user_data["verification_expires"],
+            created_at=user_data["created_at"],
+            updated_at=user_data["updated_at"]
+        )
+        
+        # Create access token
+        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+        access_token = create_access_token(
+            data={
+                "sub": user.username,
+                "user_id": user.id,
+                "role": user.role
+            },
+            expires_delta=access_token_expires
+        )
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"Database error: {e}")
+        print(f"Login error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database connection error. Please try again."
+            detail="Login failed. Please try again."
         )
-    
-    if not user or not verify_password(user_credentials.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if user.status.upper() != UserStatus.APPROVED.value.upper():
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is pending approval or has been rejected"
-        )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is inactive"
-        )
-    
-    # Create access token
-    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-    access_token = create_access_token(
-        data={
-            "sub": user.username,
-            "user_id": user.id,
-            "role": user.role  # role is already a string
-        },
-        expires_delta=access_token_expires
-    )
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": user
-    }
 
 @router.post("/token", response_model=Token)
 def login_for_access_token(

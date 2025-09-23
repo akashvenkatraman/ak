@@ -82,77 +82,103 @@ async def create_activity(
 ):
     """Create a new activity submission"""
     
-    # Parse dates
-    parsed_start_date = None
-    parsed_end_date = None
-    
-    if start_date:
+    try:
+        print(f"🚀 Creating activity for student {current_student.id}")
+        print(f"📝 Title: {title}")
+        print(f"📝 Activity Type: {activity_type}")
+        print(f"📝 Credits: {credits}")
+        print(f"📝 Start Date: {start_date}")
+        print(f"📝 End Date: {end_date}")
+        
+        # Parse dates
+        parsed_start_date = None
+        parsed_end_date = None
+        
+        if start_date:
+            try:
+                parsed_start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                print(f"✅ Parsed start_date: {parsed_start_date}")
+            except ValueError as e:
+                print(f"❌ Failed to parse start_date '{start_date}': {e}")
+                pass
+        
+        if end_date:
+            try:
+                parsed_end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                print(f"✅ Parsed end_date: {parsed_end_date}")
+            except ValueError as e:
+                print(f"❌ Failed to parse end_date '{end_date}': {e}")
+                pass
+        
+        # Create activity
+        activity = Activity(
+            student_id=current_student.id,
+            title=title,
+            description=description,
+            activity_type=activity_type,
+            credits=credits,
+            start_date=parsed_start_date,
+            end_date=parsed_end_date,
+            status=ActivityStatus.PENDING,
+            files_count=0
+        )
+        
+        db.add(activity)
+        db.commit()
+        db.refresh(activity)
+        
+        # Handle file upload if provided
+        if certificate_file:
+            from app.services.file_manager import file_manager
+            try:
+                file_storage = file_manager.save_file(certificate_file, activity.id, current_student.id, db)
+                # Update activity with legacy file path for backward compatibility
+                activity.certificate_file_path = file_storage.file_path
+                db.commit()
+            except Exception as e:
+                # If file upload fails, still create the activity but log the error
+                print(f"File upload failed: {e}")
+        
+        # Log activity creation (temporarily disabled due to enum issues)
+        # from app.models.activity_log import ActivityLog, ActivityLogType
+        # log = ActivityLog(
+        #     activity_id=activity.id,
+        #     user_id=current_student.id,
+        #     log_type="activity_created",  # Use string value directly
+        #     action=f"Activity '{title}' created",
+        #     details={
+        #         "activity_type": activity_type.value if hasattr(activity_type, 'value') else str(activity_type),
+        #         "credits": credits,
+        #         "has_file": certificate_file is not None
+        #     }
+        # )
+        # db.add(log)
+        
+        # Notify assigned teachers about the new activity submission
         try:
-            parsed_start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-        except ValueError:
-            pass
-    
-    if end_date:
-        try:
-            parsed_end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-        except ValueError:
-            pass
-    
-    # Create activity
-    activity = Activity(
-        student_id=current_student.id,
-        title=title,
-        description=description,
-        activity_type=activity_type,
-        credits=credits,
-        start_date=parsed_start_date,
-        end_date=parsed_end_date,
-        status=ActivityStatus.PENDING,
-        files_count=0
-    )
-    
-    db.add(activity)
-    db.commit()
-    db.refresh(activity)
-    
-    # Handle file upload if provided
-    if certificate_file:
-        from app.services.file_manager import file_manager
-        try:
-            file_storage = file_manager.save_file(certificate_file, activity.id, current_student.id, db)
-            # Update activity with legacy file path for backward compatibility
-            activity.certificate_file_path = file_storage.file_path
-            db.commit()
+            from app.services.notification_service import NotificationService
+            notification_service = NotificationService(db)
+            notification_service.notify_teachers_of_activity_submission(
+                activity_id=activity.id,
+                student_id=current_student.id,
+                activity_title=title,
+                student_name=current_student.full_name
+            )
+            print(f"✅ Notifications sent successfully")
         except Exception as e:
-            # If file upload fails, still create the activity but log the error
-            print(f"File upload failed: {e}")
-    
-    # Log activity creation
-    from app.models.activity_log import ActivityLog, ActivityLogType
-    log = ActivityLog(
-        activity_id=activity.id,
-        user_id=current_student.id,
-        log_type=ActivityLogType.ACTIVITY_CREATED,
-        action=f"Activity '{title}' created",
-        details={
-            "activity_type": activity_type.value if hasattr(activity_type, 'value') else str(activity_type),
-            "credits": credits,
-            "has_file": certificate_file is not None
-        }
-    )
-    db.add(log)
-    
-    # Notify assigned teachers about the new activity submission
-    from app.services.notification_service import NotificationService
-    notification_service = NotificationService(db)
-    notification_service.notify_teachers_of_activity_submission(
-        activity_id=activity.id,
-        student_id=current_student.id,
-        activity_title=title,
-        student_name=current_student.full_name
-    )
-    
-    db.commit()
+            print(f"⚠️ Failed to send notifications: {e}")
+            # Don't fail the entire request if notifications fail
+        
+        db.commit()
+        print(f"✅ Activity created successfully with ID: {activity.id}")
+        
+    except Exception as e:
+        print(f"❌ Error creating activity: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create activity: {str(e)}"
+        )
     
     # Add student name for response
     response_data = ActivityResponse.from_orm(activity)

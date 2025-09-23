@@ -17,6 +17,7 @@ import {
   Avatar,
   Tooltip,
 } from '@mui/material';
+import { keyframes } from '@mui/system';
 import {
   Menu as MenuIcon,
   Dashboard,
@@ -29,12 +30,38 @@ import {
   CheckCircle,
   PendingActions,
   Person,
+  Analytics,
+  Storage,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { notificationApi } from '../services/api';
 import { UserRole } from '../types';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
+
+// Animation keyframes
+const slideInLeft = keyframes`
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+`;
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -114,6 +141,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         path: `/${user.role}`,
         roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT],
       },
+      {
+        text: 'Storage Test',
+        icon: <Storage />,
+        path: '/storage-test',
+        roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT],
+      },
     ];
 
     const roleSpecificItems = {
@@ -122,6 +155,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         { text: 'Pending Approvals', icon: <PendingActions />, path: '/admin/pending' },
         { text: 'Student Allocation', icon: <School />, path: '/admin/allocations' },
         { text: 'All Activities', icon: <Assignment />, path: '/admin/activities' },
+        { text: 'Analytics & Reports', icon: <Analytics />, path: '/admin/analytics' },
       ],
       [UserRole.TEACHER]: [
         { text: 'My Students', icon: <People />, path: '/teacher/students' },
@@ -143,76 +177,162 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
+      {/* Professional Header */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          height: 64,
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
+        }}
+      >
+        <Toolbar sx={{ position: 'relative', zIndex: 1 }}>
+          {/* Professional Menu Button */}
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={() => setDrawerOpen(!drawerOpen)}
-            sx={{ mr: 2 }}
+            sx={{ 
+              mr: 2,
+              color: '#1976d2',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: drawerOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+              '&:hover': {
+                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                transform: drawerOpen ? 'rotate(90deg) scale(1.1)' : 'rotate(0deg) scale(1.1)',
+                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+              }
+            }}
           >
             <MenuIcon />
           </IconButton>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+          {/* Professional Logo Section */}
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              flexGrow: 1
+            }}
+          >
             <Logo size="small" showText={true} variant="horizontal" />
           </Box>
 
           {user && (
             <>
+              {/* Professional Notification Button */}
               <IconButton
                 color="inherit"
                 onClick={(e) => setNotificationMenuAnchor(e.currentTarget)}
+                sx={{
+                  color: '#666',
+                  mx: 1,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                    color: '#1976d2',
+                    transform: 'scale(1.1)',
+                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+                  }
+                }}
               >
-                <Badge badgeContent={unreadCount} color="error">
+                <Badge 
+                  badgeContent={unreadCount}
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      animation: unreadCount > 0 ? `${pulse} 2s infinite` : 'none',
+                      transform: 'scale(1)',
+                      transition: 'all 0.3s ease'
+                    }
+                  }}
+                >
                   <Notifications />
                 </Badge>
               </IconButton>
 
-              <Tooltip title={`${user.full_name} (${user.role})`}>
-                <IconButton
-                  color="inherit"
-                  onClick={(e) => setProfileMenuAnchor(e.currentTarget)}
-                  sx={{ ml: 1 }}
-                >
-                  {user.profile_picture ? (
-                    <Avatar
-                      src={`http://localhost:8000${user.profile_picture}`}
-                      alt={user.full_name}
-                      sx={{ width: 32, height: 32 }}
-                    />
-                  ) : (
-                    <AccountCircle />
-                  )}
-                </IconButton>
-              </Tooltip>
-
-              <Typography variant="body2" sx={{ ml: 1 }}>
-                {user.full_name} ({user.role})
-              </Typography>
+              {/* Professional Profile Section */}
+              <IconButton
+                onClick={(e) => setProfileMenuAnchor(e.currentTarget)}
+                sx={{
+                  color: '#666',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                    transform: 'scale(1.1)',
+                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+                  }
+                }}
+              >
+                <Tooltip title={`${user.full_name} (${user.role})`}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {user.profile_picture ? (
+                      <Avatar
+                        src={`http://localhost:8000${user.profile_picture}`}
+                        alt={user.full_name}
+                        sx={{ 
+                          width: 32, 
+                          height: 32
+                        }}
+                      />
+                    ) : (
+                      <Avatar sx={{ 
+                        width: 32, 
+                        height: 32, 
+                        bgcolor: 'primary.main'
+                      }}>
+                        {user.full_name?.charAt(0) || user.username?.charAt(0) || 'U'}
+                      </Avatar>
+                    )}
+                  </Box>
+                </Tooltip>
+              </IconButton>
             </>
           )}
         </Toolbar>
-      </AppBar>
+      </Box>
 
       <Drawer
         variant="temporary"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         sx={{
-          width: 240,
+          width: 280,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: 240,
+            width: 280,
             boxSizing: 'border-box',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRight: '1px solid rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: drawerOpen ? 'translateX(0)' : 'translateX(-100%)',
           },
         }}
+        transitionDuration={300}
       >
         <Toolbar />
-        <Box sx={{ overflow: 'auto' }}>
+        <Box sx={{ overflow: 'auto', p: 2 }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: '#1976d2', 
+              mb: 2, 
+              textAlign: 'center',
+              fontWeight: 600
+            }}
+          >
+            Navigation
+          </Typography>
           <List>
-            {menuItems.map((item) => (
+            {menuItems.map((item, index) => (
               <ListItem
                 key={item.text}
                 onClick={() => {
@@ -221,18 +341,58 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 }}
                 sx={{
                   cursor: 'pointer',
-                  backgroundColor: location.pathname === item.path ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
+                  borderRadius: 2,
+                  mb: 1,
+                  background: location.pathname === item.path 
+                    ? 'linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.05) 100%)' 
+                    : 'transparent',
+                  border: location.pathname === item.path 
+                    ? '1px solid rgba(25, 118, 210, 0.3)' 
+                    : '1px solid transparent',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: 'translateX(0)',
+                  animation: `${slideInLeft} 0.5s ease-out ${index * 0.1}s both`,
+                  '&:hover': {
+                    background: location.pathname === item.path 
+                      ? 'linear-gradient(135deg, rgba(25, 118, 210, 0.15) 0%, rgba(25, 118, 210, 0.08) 100%)' 
+                      : 'linear-gradient(135deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.02) 100%)',
+                    transform: 'translateX(8px) scale(1.02)',
+                    borderColor: 'rgba(25, 118, 210, 0.4)',
+                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.15)'
+                  },
+                  '&:active': {
+                    transform: 'translateX(4px) scale(0.98)',
+                    transition: 'all 0.1s ease'
+                  }
                 }}
               >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
+                <ListItemIcon sx={{ 
+                  color: location.pathname === item.path ? '#1976d2' : '#666', 
+                  minWidth: 40,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.1) rotate(5deg)',
+                    color: '#1976d2'
+                  }
+                }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  sx={{ 
+                    color: '#333',
+                    '& .MuiListItemText-primary': {
+                      fontWeight: location.pathname === item.path ? 600 : 400,
+                    }
+                  }} 
+                />
               </ListItem>
             ))}
           </List>
         </Box>
       </Drawer>
 
-      {/* Notifications Menu */}
+      {/* Magical Notifications Menu */}
       <Menu
         anchorEl={notificationMenuAnchor}
         open={Boolean(notificationMenuAnchor)}
@@ -241,18 +401,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           style: {
             maxHeight: 400,
             width: '350px',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            color: '#333'
           },
         }}
       >
-        <MenuItem onClick={handleMarkAllAsRead}>
-          <Typography variant="body2" color="primary">
+        <MenuItem 
+          onClick={handleMarkAllAsRead}
+          sx={{
+            background: 'rgba(25, 118, 210, 0.1)',
+            border: '1px solid rgba(25, 118, 210, 0.3)',
+            borderRadius: 1,
+            m: 1,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              background: 'rgba(25, 118, 210, 0.2)',
+              transform: 'translateY(-1px)'
+            }
+          }}
+        >
+          <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 600 }}>
             Mark All as Read
           </Typography>
         </MenuItem>
-        <Divider />
+        <Divider sx={{ borderColor: 'rgba(0, 0, 0, 0.1)' }} />
         {notifications.length === 0 ? (
           <MenuItem>
-            <Typography variant="body2" color="textSecondary">
+            <Typography variant="body2" sx={{ color: '#666' }}>
               No notifications
             </Typography>
           </MenuItem>
@@ -267,17 +446,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 setNotificationMenuAnchor(null);
               }}
               sx={{
-                backgroundColor: notification.is_read ? 'transparent' : '#f5f5f5',
+                background: notification.is_read 
+                  ? 'transparent' 
+                  : 'rgba(25, 118, 210, 0.1)',
+                border: notification.is_read 
+                  ? '1px solid transparent' 
+                  : '1px solid rgba(25, 118, 210, 0.3)',
+                borderRadius: 1,
+                m: 1,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  background: notification.is_read 
+                    ? 'rgba(0, 0, 0, 0.04)' 
+                    : 'rgba(25, 118, 210, 0.15)',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+                }
               }}
             >
               <Box>
-                <Typography variant="body2" fontWeight="bold">
+                <Typography variant="body2" fontWeight="bold" sx={{ color: 'white' }}>
                   {notification.title}
                 </Typography>
-                <Typography variant="caption" color="textSecondary">
+                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                   {notification.message}
                 </Typography>
-                <Typography variant="caption" display="block" color="textSecondary">
+                <Typography variant="caption" display="block" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
                   {new Date(notification.created_at).toLocaleString()}
                 </Typography>
               </Box>
@@ -286,27 +480,60 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         )}
       </Menu>
 
-      {/* Profile Menu */}
+      {/* Clean Profile Menu */}
       <Menu
         anchorEl={profileMenuAnchor}
         open={Boolean(profileMenuAnchor)}
         onClose={() => setProfileMenuAnchor(null)}
+        PaperProps={{
+          style: {
+            background: '#ffffff',
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            color: '#333',
+            minWidth: '200px',
+            marginTop: '8px'
+          },
+        }}
       >
-        <MenuItem onClick={() => {
-          navigate('/profile');
-          setProfileMenuAnchor(null);
-        }}>
-          <ListItemIcon>
+        <MenuItem 
+          onClick={() => {
+            navigate('/profile');
+            setProfileMenuAnchor(null);
+          }}
+          sx={{
+            borderRadius: 2,
+            m: 0.5,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              background: 'rgba(25, 118, 210, 0.1)',
+              transform: 'translateY(-1px)'
+            }
+          }}
+        >
+          <ListItemIcon sx={{ color: '#1976d2', minWidth: 36 }}>
             <Person fontSize="small" />
           </ListItemIcon>
-          Profile
+          <Typography sx={{ color: '#333', fontWeight: 500 }}>Profile</Typography>
         </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleLogout}>
-          <ListItemIcon>
+        <Divider sx={{ borderColor: 'rgba(0, 0, 0, 0.1)', mx: 1 }} />
+        <MenuItem 
+          onClick={handleLogout}
+          sx={{
+            borderRadius: 2,
+            m: 0.5,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              background: 'rgba(244, 67, 54, 0.1)',
+              transform: 'translateY(-1px)'
+            }
+          }}
+        >
+          <ListItemIcon sx={{ color: '#f44336', minWidth: 36 }}>
             <ExitToApp fontSize="small" />
           </ListItemIcon>
-          Logout
+          <Typography sx={{ color: '#f44336', fontWeight: 500 }}>Logout</Typography>
         </MenuItem>
       </Menu>
 
@@ -314,9 +541,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          bgcolor: 'background.default',
+          background: 'transparent',
+          minHeight: '100vh',
           p: 3,
           mt: 8, // Account for AppBar height
+          animation: `${slideInLeft} 0.6s ease-out`,
+          transition: 'all 0.3s ease'
         }}
       >
         {children}

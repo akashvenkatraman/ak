@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Login Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 8px; margin-bottom: 10px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; width: 100%; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .loading { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Simple Login Test</h1>
+        <p>This page tests the login API directly without React.</p>
+        
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" value="admin" placeholder="Enter username">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="admin123" placeholder="Enter password">
+        </div>
+        
+        <button onclick="testLogin()" id="loginBtn">Test Login</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            const loginBtn = document.getElementById('loginBtn');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showResult('Please enter both username and password', 'error');
+                return;
+            }
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+            showResult('Logging in...', 'loading');
+            
+            try {
+                console.log('🚀 Starting login test...');
+                console.log('📝 Credentials:', { username, password });
+                
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('📤 Response status:', response.status);
+                console.log('📤 Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Login successful:', data);
+                    
+                    // Store the token
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    showResult(`✅ Login successful!
+User: ${data.user.username}
+Role: ${data.user.role}
+Status: ${data.user.status}
+Token: ${data.access_token.substring(0, 50)}...
+
+You can now test the main application!`, 'success');
+                    
+                    // Test the /auth/me endpoint
+                    setTimeout(() => testCurrentUser(data.access_token), 1000);
+                } else {
+                    const errorData = await response.json();
+                    console.error('❌ Login failed:', errorData);
+                    showResult(`❌ Login failed!
+Status: ${response.status}
+Error: ${errorData.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Login error:', error);
+                showResult(`❌ Login error!
+Error: ${error.message}`, 'error');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Test Login';
+            }
+        }
+        
+        async function testCurrentUser(token) {
+            try {
+                console.log('🔍 Testing /auth/me endpoint...');
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    console.log('✅ Current user data:', userData);
+                    showResult(document.getElementById('result').textContent + `
+
+🔍 Current User Test:
+✅ /auth/me endpoint working
+User: ${userData.username}
+Role: ${userData.role}
+Status: ${userData.status}`, 'success');
+                } else {
+                    console.error('❌ /auth/me failed:', response.status);
+                }
+            } catch (error) {
+                console.error('❌ /auth/me error:', error);
+            }
+        }
+        
+        function showResult(message, type) {
+            const element = document.getElementById('result');
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            console.log('🧪 Simple login test page loaded');
+        };
+    </script>
+</body>
+</html>

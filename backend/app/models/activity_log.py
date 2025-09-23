@@ -32,7 +32,7 @@ class ActivityLog(Base):
     activity_id = Column(Integer, ForeignKey("activities.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Who performed the action
     target_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Target user if different
-    log_type = Column(Enum(ActivityLogType), nullable=False)
+    log_type = Column(String, nullable=False)  # Store as string to avoid enum issues
     action = Column(Text, nullable=False)  # Description of the action
     details = Column(JSON, nullable=True)  # Store additional data like file paths, old/new values, etc.
     created_at = Column(DateTime(timezone=True), server_default=func.now())

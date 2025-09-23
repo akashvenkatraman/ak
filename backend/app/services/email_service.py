@@ -15,8 +15,9 @@ conf = ConnectionConfig(
     MAIL_FROM_NAME=settings.mail_from_name,
     MAIL_PORT=settings.mail_port,
     MAIL_SERVER=settings.mail_server,
-    MAIL_TLS=settings.mail_tls,
-    MAIL_SSL=settings.mail_ssl,
+    # fastapi-mail expects explicit STARTTLS/SSL settings in recent versions
+    MAIL_STARTTLS=getattr(settings, "mail_starttls", settings.mail_tls),
+    MAIL_SSL_TLS=getattr(settings, "mail_ssl_tls", settings.mail_ssl),
     USE_CREDENTIALS=settings.use_credentials,
     VALIDATE_CERTS=settings.validate_certs,
 )

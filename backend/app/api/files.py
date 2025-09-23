@@ -167,7 +167,7 @@ def view_file(
     log = ActivityLog(
         activity_id=file_storage.activity_id,
         user_id=current_user.id,
-        log_type=ActivityLogType.CERTIFICATE_VIEWED,
+        log_type=ActivityLogType.CERTIFICATE_VIEWED.value,  # Convert enum to string value
         action=f"File '{file_storage.original_name}' viewed",
         details={
             "file_id": file_storage.id,

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Activity Submission</title>
+</head>
+<body>
+    <h1>Test Activity Submission</h1>
+    <div id="status"></div>
+    <form id="activityForm">
+        <div>
+            <label>Title:</label>
+            <input type="text" id="title" value="Test Activity" required>
+        </div>
+        <div>
+            <label>Description:</label>
+            <textarea id="description">Test Description</textarea>
+        </div>
+        <div>
+            <label>Activity Type:</label>
+            <select id="activity_type">
+                <option value="conference">Conference</option>
+                <option value="seminar">Seminar</option>
+                <option value="workshop">Workshop</option>
+            </select>
+        </div>
+        <div>
+            <label>Credits:</label>
+            <input type="number" id="credits" value="1" step="0.5">
+        </div>
+        <div>
+            <label>Start Date:</label>
+            <input type="date" id="start_date" value="2025-01-09">
+        </div>
+        <div>
+            <label>End Date:</label>
+            <input type="date" id="end_date" value="2025-02-09">
+        </div>
+        <button type="submit">Submit Activity</button>
+    </form>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let authToken = null;
+
+        // Login first
+        async function login() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'akashv',
+                        password: 'password123'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.access_token;
+                    document.getElementById('status').innerHTML = '✅ Logged in successfully!';
+                    return true;
+                } else {
+                    const error = await response.text();
+                    document.getElementById('status').innerHTML = `❌ Login failed: ${error}`;
+                    return false;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Login error: ${error.message}`;
+                return false;
+            }
+        }
+
+        // Submit activity
+        async function submitActivity(event) {
+            event.preventDefault();
+            
+            if (!authToken) {
+                document.getElementById('status').innerHTML = '❌ Not logged in!';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('activity_type', document.getElementById('activity_type').value);
+            formData.append('credits', document.getElementById('credits').value);
+            formData.append('start_date', document.getElementById('start_date').value);
+            formData.append('end_date', document.getElementById('end_date').value);
+
+            try {
+                const response = await fetch(`${API_BASE}/students/activities`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('status').innerHTML = `✅ Activity submitted successfully! ID: ${data.id}`;
+                } else {
+                    const error = await response.text();
+                    document.getElementById('status').innerHTML = `❌ Submission failed: ${error}`;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Submission error: ${error.message}`;
+            }
+        }
+
+        // Initialize
+        document.getElementById('activityForm').addEventListener('submit', submitActivity);
+        login();
+    </script>
+</body>
+</html>

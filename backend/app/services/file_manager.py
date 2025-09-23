@@ -166,7 +166,7 @@ class FileManager:
         log = ActivityLog(
             activity_id=activity_id,
             user_id=user_id,
-            log_type=log_type,
+            log_type=log_type.value,  # Convert enum to string value
             action=action,
             details=details
         )

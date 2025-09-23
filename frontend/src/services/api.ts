@@ -20,7 +20,7 @@ const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 // Create axios instance
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000, // 30 seconds timeout
+  timeout: 10000, // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json',
   },
@@ -28,23 +28,75 @@ const api = axios.create({
 
 // Request interceptor to add auth token
 api.interceptors.request.use((config) => {
+  console.log('🌐 Request interceptor:', config.method?.toUpperCase(), config.url);
   const token = localStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log('🌐 Added auth token to request');
   }
   return config;
 });
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('🌐 Response interceptor success:', response.status, response.config.url);
+    return response;
+  },
   (error: AxiosError) => {
+    console.error('🌐 Response interceptor error:', error.message);
+    console.error('🌐 Error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      url: error.config?.url
+    });
+    
+    // Handle different types of errors with specific messages
+    if (error.code === 'ECONNABORTED') {
+      const timeoutError = new Error('Request timeout. Please check your connection and try again.');
+      timeoutError.name = 'TimeoutError';
+      return Promise.reject(timeoutError);
+    }
+    
+    if (error.code === 'ERR_NETWORK' || !error.response) {
+      const networkError = new Error('Unable to connect to server. Please check if the backend is running and try again.');
+      networkError.name = 'NetworkError';
+      return Promise.reject(networkError);
+    }
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      const authError = new Error('Session expired. Please log in again.');
+      authError.name = 'AuthError';
+      return Promise.reject(authError);
     }
-    return Promise.reject(error);
+    
+    if (error.response?.status === 403) {
+      const forbiddenError = new Error('Access denied. You do not have permission to perform this action.');
+      forbiddenError.name = 'ForbiddenError';
+      return Promise.reject(forbiddenError);
+    }
+    
+    if (error.response?.status === 404) {
+      const notFoundError = new Error('Resource not found. Please check the URL and try again.');
+      notFoundError.name = 'NotFoundError';
+      return Promise.reject(notFoundError);
+    }
+    
+    if (error.response?.status >= 500) {
+      const serverError = new Error('Server error. Please try again later or contact support.');
+      serverError.name = 'ServerError';
+      return Promise.reject(serverError);
+    }
+    
+    // For other errors, provide the server message if available
+    const responseData = error.response?.data as any;
+    const serverMessage = responseData?.detail || responseData?.message || error.message;
+    const customError = new Error(serverMessage);
+    customError.name = 'ApiError';
+    return Promise.reject(customError);
   }
 );
 
@@ -53,8 +105,12 @@ export const authApi = {
   register: (userData: UserCreate): Promise<AxiosResponse<User>> =>
     api.post('/auth/register', userData),
 
-  login: (credentials: LoginCredentials): Promise<AxiosResponse<AuthResponse>> =>
-    api.post('/auth/login', credentials),
+  login: (credentials: LoginCredentials): Promise<AxiosResponse<AuthResponse>> => {
+    console.log('🌐 API: Making login request...');
+    console.log('🌐 API: URL:', `${api.defaults.baseURL}/auth/login`);
+    console.log('🌐 API: Credentials:', credentials);
+    return api.post('/auth/login', credentials);
+  },
 
   getCurrentUser: (): Promise<AxiosResponse<User>> =>
     api.get('/auth/me'),
@@ -94,6 +150,42 @@ export const adminApi = {
 
   getAllActivities: (): Promise<AxiosResponse<any[]>> =>
     api.get('/admin/activities/all'),
+
+  // Data Export Functions
+  exportTeachersData: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/teachers', { responseType: 'blob' }),
+
+  exportStudentsData: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/students', { responseType: 'blob' }),
+
+  exportComprehensiveData: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/comprehensive', { responseType: 'blob' }),
+
+  // Analytics and Performance Export Functions
+  exportTeachersPerformanceData: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/teachers-performance', { responseType: 'blob' }),
+
+  exportStudentsPerformanceData: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/students-performance', { responseType: 'blob' }),
+
+  exportNirfMetrics: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/nirf-metrics', { responseType: 'blob' }),
+
+  getAnalyticsDashboardData: (): Promise<AxiosResponse<any>> =>
+    api.get('/admin/analytics/dashboard-data'),
+
+  // Sample Data Export Functions (No authentication required)
+  exportTeachersSampleData: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/teachers-sample', { responseType: 'blob' }),
+
+  exportStudentsSampleData: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/students-sample', { responseType: 'blob' }),
+
+  exportOverallSampleData: (): Promise<AxiosResponse<Blob>> =>
+    api.get('/admin/export/overall-sample', { responseType: 'blob' }),
+
+  getSampleAnalyticsDashboardData: (): Promise<AxiosResponse<any>> =>
+    api.get('/admin/analytics/sample-dashboard-data'),
 };
 
 // Student API
@@ -101,12 +193,24 @@ export const studentApi = {
   getDashboard: (): Promise<AxiosResponse<DashboardStats>> =>
     api.get('/students/dashboard'),
 
-  createActivity: (activityData: FormData): Promise<AxiosResponse<Activity>> =>
-    api.post('/students/activities', activityData, {
+  createActivity: (activityData: FormData): Promise<AxiosResponse<Activity>> => {
+    console.log('🔧 API: createActivity called');
+    console.log('🔧 API: FormData entries:');
+    
+    // Use Array.from to convert FormData entries to array for iteration
+    const entries = Array.from(activityData.entries());
+    entries.forEach(([key, value]) => {
+      console.log(`  ${key}: ${value}`);
+    });
+    
+    console.log('🔧 API: Sending request to /students/activities');
+    
+    return api.post('/students/activities', activityData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-    }),
+    });
+  },
 
   getActivities: (status?: string): Promise<AxiosResponse<Activity[]>> =>
     api.get('/students/activities', { params: { status } }),

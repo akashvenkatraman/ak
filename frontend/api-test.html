@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Suite</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-section h3 { margin-top: 0; color: #333; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 3px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 15px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; white-space: pre-wrap; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        input, select { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 API Test Suite</h1>
+        <p>This page tests all the API endpoints to ensure they're working correctly.</p>
+        
+        <!-- Health Check -->
+        <div class="test-section">
+            <h3>🏥 Health Check</h3>
+            <button onclick="testHealth()">Test Backend Health</button>
+            <div id="health-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Authentication Tests -->
+        <div class="test-section">
+            <h3>🔐 Authentication Tests</h3>
+            <div>
+                <label>Username: <input type="text" id="username" value="admin"></label>
+                <label>Password: <input type="password" id="password" value="admin123"></label>
+            </div>
+            <button onclick="testLogin()">Test Login</button>
+            <button onclick="testStudentLogin()">Test Student Login</button>
+            <div id="auth-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Activity Submission Test -->
+        <div class="test-section">
+            <h3>📝 Activity Submission Test</h3>
+            <div>
+                <label>Title: <input type="text" id="activity-title" value="Test Activity"></label>
+                <label>Description: <input type="text" id="activity-description" value="Test Description"></label>
+            </div>
+            <div>
+                <label>Type: 
+                    <select id="activity-type">
+                        <option value="extracurricular">Extracurricular</option>
+                        <option value="seminar">Seminar</option>
+                        <option value="conference">Conference</option>
+                        <option value="workshop">Workshop</option>
+                    </select>
+                </label>
+                <label>Credits: <input type="number" id="activity-credits" value="5"></label>
+            </div>
+            <div>
+                <label>Start Date: <input type="date" id="start-date" value="2025-03-09"></label>
+                <label>End Date: <input type="date" id="end-date" value="2025-03-10"></label>
+            </div>
+            <button onclick="testActivitySubmission()">Test Activity Submission</button>
+            <div id="activity-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Student Dashboard Test -->
+        <div class="test-section">
+            <h3>📊 Student Dashboard Test</h3>
+            <button onclick="testStudentDashboard()">Test Student Dashboard</button>
+            <div id="dashboard-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- CORS Test -->
+        <div class="test-section">
+            <h3>🌐 CORS Test</h3>
+            <button onclick="testCORS()">Test CORS from Frontend</button>
+            <div id="cors-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let authToken = null;
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                showResult('health-result', `✅ Health Check Successful!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('health-result', `❌ Health Check Failed!\nError: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.access_token;
+                    showResult('auth-result', `✅ Login Successful!\nUser: ${data.user.username}\nRole: ${data.user.role}\nStatus: ${data.user.status}\nToken: ${data.access_token.substring(0, 50)}...`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    showResult('auth-result', `❌ Login Failed!\nStatus: ${response.status}\nError: ${errorData.detail}`, 'error');
+                }
+            } catch (error) {
+                showResult('auth-result', `❌ Login Error!\nError: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStudentLogin() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: 'akashv', password: 'password123' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.access_token;
+                    showResult('auth-result', `✅ Student Login Successful!\nUser: ${data.user.username}\nRole: ${data.user.role}\nStatus: ${data.user.status}`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    showResult('auth-result', `❌ Student Login Failed!\nStatus: ${response.status}\nError: ${errorData.detail}`, 'error');
+                }
+            } catch (error) {
+                showResult('auth-result', `❌ Student Login Error!\nError: ${error.message}`, 'error');
+            }
+        }
+
+        async function testActivitySubmission() {
+            if (!authToken) {
+                showResult('activity-result', '❌ Please login first!', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('activity-title').value);
+            formData.append('description', document.getElementById('activity-description').value);
+            formData.append('activity_type', document.getElementById('activity-type').value);
+            formData.append('credits', document.getElementById('activity-credits').value);
+            
+            // Convert dates to ISO format
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            formData.append('start_date', new Date(startDate + 'T00:00:00Z').toISOString());
+            formData.append('end_date', new Date(endDate + 'T00:00:00Z').toISOString());
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/students/activities`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('activity-result', `✅ Activity Submission Successful!\nActivity ID: ${data.id}\nTitle: ${data.title}\nStatus: ${data.status}`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    showResult('activity-result', `❌ Activity Submission Failed!\nStatus: ${response.status}\nError: ${JSON.stringify(errorData, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult('activity-result', `❌ Activity Submission Error!\nError: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStudentDashboard() {
+            if (!authToken) {
+                showResult('dashboard-result', '❌ Please login first!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/students/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('dashboard-result', `✅ Dashboard Data Retrieved!\nResponse: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    showResult('dashboard-result', `❌ Dashboard Request Failed!\nStatus: ${response.status}\nError: ${JSON.stringify(errorData, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult('dashboard-result', `❌ Dashboard Request Error!\nError: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Origin': 'http://localhost:3000'
+                    }
+                });
+                
+                const data = await response.json();
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('access-control-allow-origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('access-control-allow-methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('access-control-allow-headers')
+                };
+                
+                showResult('cors-result', `✅ CORS Test Successful!\nStatus: ${response.status}\nCORS Headers: ${JSON.stringify(corsHeaders, null, 2)}\nResponse: ${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                showResult('cors-result', `❌ CORS Test Failed!\nError: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run health check on page load
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

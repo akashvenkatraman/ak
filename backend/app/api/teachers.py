@@ -258,7 +258,7 @@ def approve_activity(
     status_value = approval_data.status.value.upper()  # Convert to uppercase for database
     db.execute(text("""
         UPDATE activities 
-        SET status = :status, credits = :credits, updated_at = NOW()
+        SET status = :status, credits = :credits, updated_at = datetime('now')
         WHERE id = :activity_id
     """), {
         'status': status_value,
@@ -272,7 +272,7 @@ def approve_activity(
     
     result = db.execute(text("""
         INSERT INTO activity_approvals (activity_id, teacher_id, status, comments, credits_awarded, approved_at, created_at)
-        VALUES (:activity_id, :teacher_id, :status, :comments, :credits_awarded, :approved_at, NOW())
+        VALUES (:activity_id, :teacher_id, :status, :comments, :credits_awarded, :approved_at, datetime('now'))
         RETURNING id
     """), {
         'activity_id': approval_data.activity_id,
@@ -309,7 +309,7 @@ def approve_activity(
     log = ActivityLog(
         activity_id=approval_data.activity_id,
         user_id=current_teacher.id,
-        log_type=log_type,
+        log_type=log_type.value,  # Convert enum to string value
         action=f"Activity {approval_data.status.value} by teacher",
         details={
             "teacher_id": current_teacher.id,

@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<{ success: boolean; user: User }>;
   register: (userData: UserCreate) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -66,20 +66,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Check if user is logged in on app start
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = localStorage.getItem('access_token');
-      const savedUser = localStorage.getItem('user');
+      try {
+        const token = localStorage.getItem('access_token');
+        const savedUser = localStorage.getItem('user');
 
-      if (token && savedUser) {
-        try {
+        if (token && savedUser) {
+          console.log('🔐 Initializing auth with saved user...');
           setUser(JSON.parse(savedUser));
-          // Optionally verify token with server
-          await refreshUser();
-        } catch (error) {
-          console.error('Error initializing auth:', error);
-          logout();
+          
+          // Verify token with server (but don't block if it fails)
+          try {
+            await refreshUser();
+            console.log('🔐 Token verification successful');
+          } catch (error) {
+            console.warn('🔐 Token verification failed, but keeping user logged in:', error);
+            // Don't logout on verification failure, just keep the saved user
+          }
+        } else {
+          console.log('🔐 No saved authentication found');
         }
+      } catch (error) {
+        console.error('🔐 Error initializing auth:', error);
+        logout();
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initializeAuth();
@@ -87,14 +98,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials) => {
     try {
+      console.log('🔐 useAuth: Starting login...');
+      console.log('🔐 useAuth: Credentials:', credentials);
       setIsLoading(true);
+      
+      console.log('🔐 useAuth: Calling authApi.login...');
       const response = await authApi.login(credentials);
+      console.log('🔐 useAuth: Response received:', response);
+      
       const { access_token, user: userData } = response.data;
+      console.log('🔐 useAuth: User data:', userData);
 
+      // Store authentication data
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('user', JSON.stringify(userData));
+      
+      // Update state
       setUser(userData);
+      console.log('🔐 useAuth: Login completed successfully');
+      
+      // Return success to indicate login completed
+      return { success: true, user: userData };
     } catch (error) {
+      console.error('🔐 useAuth: Login error:', error);
+      // Clear any partial state
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      setUser(null);
       throw error;
     } finally {
       setIsLoading(false);

@@ -21,6 +21,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/recharts": "^1.8.29",
     "axios": "^1.12.2",
+    "gsap": "^3.13.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1",
